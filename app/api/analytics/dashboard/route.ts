@@ -82,8 +82,8 @@ export async function GET(request: NextRequest) {
       where: { id: { in: centerIds } },
     });
 
-    const centerMap = new Map(centers.map((c) => [c.id, c.name]));
-    const topCenters = centerPerformance.map((cp) => ({
+    const centerMap = new Map(centers.map((c: any) => [c.id, c.name]));
+    const topCenters = centerPerformance.map((cp: any) => ({
       centerId: cp.centerId as string,
       centerName: centerMap.get(cp.centerId as string) || "Unknown",
       revenue: Number(cp._sum.revenue || 0),
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
       take: 6,
     });
 
-    const expenseCategories = expenseCategoriesData.map((ec) => ({
+    const expenseCategories = expenseCategoriesData.map((ec: any) => ({
       categoryName: ec.category || "Unknown",
       amount: Number(ec._sum.total || 0),
     }));
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
     const allCenters = await prisma.center.findMany();
     const profitMargins = [];
 
-    for (const center of allCenters) {
+    for (const center of allCenters as any) {
       const centerRevenue = await prisma.incomeRecord.aggregate({
         where: { centerId: center.id },
         _sum: { revenue: true },
