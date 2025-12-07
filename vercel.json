@@ -2,10 +2,5 @@
   "buildCommand": "npm run build",
   "devCommand": "next dev",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "@vercel/node"
-    }
-  }
+  "framework": "nextjs"
 }
