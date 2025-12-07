@@ -91,15 +91,15 @@ export async function GET(request: NextRequest) {
         _sum: { revenue: true },
       })
 
-      const centerIds = centerPerformance.map(cp => cp.centerId)
+      const centerIds = centerPerformance.map((cp: any) => cp.centerId)
       const centers = await prisma.center.findMany({
         where: { id: { in: centerIds } },
       })
 
-      const centerMap = new Map(centers.map(c => [c.id, c.name]))
+      const centerMap = new Map(centers.map((c: any) => [c.id, c.name]))
 
       const centerRows = []
-      for (const cp of centerPerformance) {
+      for (const cp of centerPerformance as any[]) {
         const centerRevenue = Number(cp._sum.revenue || 0)
         const centerExpenses = await prisma.expenseRecord.aggregate({
           where: { centerId: cp.centerId, ...where },
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
         orderBy: [{ year: 'desc' }, { month: 'desc' }],
       })
 
-      const incomeRows = incomeRecords.map(record => [
+      const incomeRows = incomeRecords.map((record: any) => [
         record.month,
         record.year,
         record.center.name,
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
         orderBy: [{ year: 'desc' }, { month: 'desc' }],
       })
 
-      const expenseRows = expenseRecords.map(record => [
+      const expenseRows = expenseRecords.map((record: any) => [
         record.month,
         record.year,
         record.center.name,

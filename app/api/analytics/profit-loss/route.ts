@@ -41,12 +41,12 @@ export async function GET(request: NextRequest) {
 
     // Get center details
     const centers = await prisma.center.findMany()
-    const centerMap = new Map(centers.map(c => [c.id, c]))
+    const centerMap = new Map(centers.map((c: any) => [c.id, c]))
 
     // Combine data
     const profitLossMap = new Map<string, any>()
 
-    incomeAgg.forEach(item => {
+    incomeAgg.forEach((item: any) => {
       const key = `${item.centerId}-${item.year}-${item.month}`
       profitLossMap.set(key, {
         centerId: item.centerId,
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       })
     })
 
-    expenseAgg.forEach(item => {
+    expenseAgg.forEach((item: any) => {
       const key = `${item.centerId}-${item.year}-${item.month}`
       const existing = profitLossMap.get(key)
       if (existing) {
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     }))
 
     // Sort by year, month desc
-    profitLossData.sort((a, b) => {
+    profitLossData.sort((a: any, b: any) => {
       if (a.year !== b.year) return b.year - a.year
       return b.month - a.month
     })
