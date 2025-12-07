@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       take: 5,
     });
 
-    const centerIds = centerPerformance.map((cp) => cp.centerId as string);
+    const centerIds = centerPerformance.map((cp: any) => cp.centerId as string);
     const centers = await prisma.center.findMany({
       where: { id: { in: centerIds } },
     });
