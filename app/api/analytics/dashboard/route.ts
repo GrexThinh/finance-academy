@@ -82,7 +82,9 @@ export async function GET(request: NextRequest) {
       where: { id: { in: centerIds } },
     });
 
-    const centerMap = new Map(centers.map((c: any) => [c.id, c.name]));
+    const centerMap = new Map<string, string>(
+      centers.map((c: any) => [c.id, c.name])
+    );
     const topCenters = centerPerformance.map((cp: any) => ({
       centerId: cp.centerId as string,
       centerName: centerMap.get(cp.centerId as string) || "Unknown",
