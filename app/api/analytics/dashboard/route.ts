@@ -77,15 +77,15 @@ export async function GET(request: NextRequest) {
       take: 5,
     });
 
-    const centerIds = centerPerformance.map((cp) => cp.centerId);
+    const centerIds = centerPerformance.map((cp) => cp.centerId as string);
     const centers = await prisma.center.findMany({
       where: { id: { in: centerIds } },
     });
 
     const centerMap = new Map(centers.map((c) => [c.id, c.name]));
     const topCenters = centerPerformance.map((cp) => ({
-      centerId: cp.centerId,
-      centerName: centerMap.get(cp.centerId) || "Unknown",
+      centerId: cp.centerId as string,
+      centerName: centerMap.get(cp.centerId as string) || "Unknown",
       revenue: Number(cp._sum.revenue || 0),
     }));
 
