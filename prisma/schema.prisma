@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  name      String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model Center {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  incomeRecords  IncomeRecord[]
+  expenseRecords ExpenseRecord[]
+
+  @@map("centers")
+}
+
+model Program {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  incomeRecords IncomeRecord[]
+
+  @@map("programs")
+}
+
+model IncomeRecord {
+  id             String   @id @default(cuid())
+  month          Int
+  year           Int
+  centerId       String
+  programId      String
+  numberOfClasses Int     @default(0)
+  numberOfStudents Int    @default(0)
+  revenue        Decimal  @db.Decimal(15, 2)
+  status         String?
+  notes          String?
+  uploadedFileUrl String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  center  Center  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([centerId])
+  @@index([programId])
+  @@index([year, month])
+  @@map("income_records")
+}
+
+// Removed ExpenseCategory and ExpenseItem models - using free text instead
+
+model ExpenseRecord {
+  id              String   @id @default(cuid())
+  month           Int
+  year            Int
+  centerId        String
+  category        String
+  item            String
+  position        String?
+  contractType    String?
+  hours           Decimal?  @db.Decimal(10, 2)
+  unitPrice       Decimal?  @db.Decimal(15, 2)
+  amount          Decimal   @db.Decimal(15, 2)
+  kilometers      Decimal?  @db.Decimal(10, 2)
+  travelAllowance Decimal?  @db.Decimal(15, 2)
+  responsible     String?
+  status          String?
+  total           Decimal   @db.Decimal(15, 2)
+  notes           String?
+  uploadedFileUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@index([centerId])
+  @@index([year, month])
+  @@map("expense_records")
+}
