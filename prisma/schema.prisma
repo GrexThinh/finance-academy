@@ -9,23 +9,6 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  password  String
-  name      String
-  role      UserRole @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("users")
-}
-
-enum UserRole {
-  ADMIN
-  USER
-}
-
 model Center {
   id        String   @id @default(cuid())
   name      String   @unique
@@ -51,12 +34,25 @@ model Program {
   @@map("programs")
 }
 
+model Partner {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  incomeRecords IncomeRecord[]
+
+  @@map("partners")
+}
+
 model IncomeRecord {
   id             String   @id @default(cuid())
   month          Int
   year           Int
   centerId       String
   programId      String
+  partnerId      String?
   numberOfClasses Int     @default(0)
   numberOfStudents Int    @default(0)
   revenue        Decimal  @db.Decimal(15, 2)
@@ -68,9 +64,11 @@ model IncomeRecord {
 
   center  Center  @relation(fields: [centerId], references: [id], onDelete: Cascade)
   program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  partner Partner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
 
   @@index([centerId])
   @@index([programId])
+  @@index([partnerId])
   @@index([year, month])
   @@map("income_records")
 }

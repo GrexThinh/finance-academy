@@ -37,14 +37,12 @@ async function createTables() {
     );
   `;
 
-  console.log("Creating users table...");
+  console.log("Creating partners table...");
   await prisma.$executeRaw`
-    CREATE TABLE IF NOT EXISTS "users" (
+    CREATE TABLE IF NOT EXISTS "partners" (
       "id" TEXT PRIMARY KEY,
-      "username" TEXT NOT NULL UNIQUE,
-      "password" TEXT NOT NULL,
-      "name" TEXT NOT NULL,
-      "role" TEXT NOT NULL DEFAULT 'USER',
+      "name" TEXT NOT NULL UNIQUE,
+      "code" TEXT UNIQUE,
       "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
       "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
     );
@@ -58,6 +56,7 @@ async function createTables() {
       "year" INTEGER NOT NULL,
       "centerId" TEXT NOT NULL,
       "programId" TEXT NOT NULL,
+      "partnerId" TEXT,
       "numberOfClasses" INTEGER NOT NULL DEFAULT 0,
       "numberOfStudents" INTEGER NOT NULL DEFAULT 0,
       "revenue" DECIMAL(15,2) NOT NULL,
@@ -128,20 +127,6 @@ async function main() {
   console.log("Creating database tables...");
   await createTables();
 
-  // Create default admin user
-  console.log("Creating admin user...");
-  const hashedPassword = await bcrypt.hash("admin", 10);
-  await prisma.user.upsert({
-    where: { username: "admin" },
-    update: {},
-    create: {
-      username: "admin",
-      password: hashedPassword,
-      name: "Administrator",
-      role: "ADMIN",
-    },
-  });
-  console.log("✓ Admin user created (username: admin, password: admin)");
 
   // Import data from Excel files
   const file1Path = path.join(

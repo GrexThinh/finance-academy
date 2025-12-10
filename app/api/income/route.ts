@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
       include: {
         center: true,
         program: true,
+        partner: true,
       },
       orderBy: [
         { year: 'desc' },
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
       year,
       centerId,
       programId,
+      partnerId,
       numberOfClasses,
       numberOfStudents,
       revenue,
@@ -70,6 +72,7 @@ export async function POST(request: NextRequest) {
         year,
         centerId,
         programId,
+        partnerId: partnerId || null,
         numberOfClasses: numberOfClasses || 0,
         numberOfStudents: numberOfStudents || 0,
         revenue,
@@ -80,6 +83,7 @@ export async function POST(request: NextRequest) {
       include: {
         center: true,
         program: true,
+        partner: true,
       },
     })
 
@@ -109,6 +113,7 @@ export async function PUT(request: NextRequest) {
       include: {
         center: true,
         program: true,
+        partner: true,
       },
     })
 

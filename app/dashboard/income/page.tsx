@@ -14,6 +14,7 @@ interface IncomeRecord {
   year: number;
   center: { id: string; name: string };
   program: { id: string; name: string };
+  partner?: { id: string; name: string } | null;
   numberOfClasses: number;
   numberOfStudents: number;
   revenue: string;
@@ -193,6 +194,9 @@ export default function IncomePage() {
                   Chương trình
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Đối tác
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Số lớp
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -210,7 +214,7 @@ export default function IncomePage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     Đang tải...
@@ -219,7 +223,7 @@ export default function IncomePage() {
               ) : filteredRecords.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     Không có dữ liệu
@@ -236,6 +240,9 @@ export default function IncomePage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.program?.name || "N/A"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {record.partner?.name || "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.numberOfClasses}

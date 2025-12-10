@@ -8,39 +8,31 @@ async function testConnection() {
     await prisma.$connect();
     console.log("✅ Database connection successful!");
 
-    // Test user table
-    const userCount = await prisma.user.count();
-    console.log(`📊 Users in database: ${userCount}`);
+    // Test partner table
+    const partnerCount = await prisma.partner.count();
+    console.log(`📊 Partners in database: ${partnerCount}`);
 
-    // List all users (for debugging)
-    const users = await prisma.user.findMany({
+    // List all partners (for debugging)
+    const partners = await prisma.partner.findMany({
       select: {
         id: true,
-        username: true,
         name: true,
-        role: true,
+        code: true,
         createdAt: true,
       },
     });
 
-    console.log("👥 Users found:");
-    users.forEach((user) => {
-      console.log(`  - ${user.username} (${user.role})`);
+    console.log("🤝 Partners found:");
+    partners.forEach((partner) => {
+      console.log(`  - ${partner.name} (${partner.code || 'no code'})`);
     });
 
-    // Test if admin user exists
-    const adminUser = await prisma.user.findUnique({
-      where: { username: "admin" },
-    });
-
-    if (adminUser) {
-      console.log("✅ Admin user exists");
-      console.log(`   Username: ${adminUser.username}`);
-      console.log(`   Role: ${adminUser.role}`);
+    // Test if we have any partners
+    if (partners.length > 0) {
+      console.log("✅ Partners exist in database");
     } else {
-      console.log("❌ Admin user not found");
+      console.log("ℹ️  No partners found (database is empty)");
     }
-
   } catch (error) {
     console.error("❌ Database connection failed:", error);
     console.log("\n🔧 Troubleshooting tips:");

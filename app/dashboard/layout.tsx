@@ -9,7 +9,6 @@ import {
   TrendingUp,
   TrendingDown,
   BarChart3,
-  Users,
   Settings,
   LogOut,
   Menu,
@@ -27,15 +26,11 @@ interface NavigationItem {
   children?: NavigationItem[];
 }
 
-const baseNavigation: NavigationItem[] = [
+const navigation: NavigationItem[] = [
   { name: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
   { name: "Thu nhập", href: "/dashboard/income", icon: TrendingUp },
   { name: "Chi phí", href: "/dashboard/expenses", icon: TrendingDown },
   { name: "Lợi nhuận/Lỗ", href: "/dashboard/profit-loss", icon: BarChart3 },
-];
-
-const adminNavigation: NavigationItem[] = [
-  { name: "Quản lý người dùng", href: "/dashboard/users", icon: Users },
   {
     name: "Danh mục",
     href: "/dashboard/catalog",
@@ -43,6 +38,7 @@ const adminNavigation: NavigationItem[] = [
     children: [
       { name: "Trung tâm", href: "/dashboard/catalog/centers" },
       { name: "Chương trình", href: "/dashboard/catalog/programs" },
+      { name: "Đối tác", href: "/dashboard/catalog/partners" },
     ],
   },
 ];
@@ -56,15 +52,6 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
-  const { data: session, status } = useSession();
-
-  // Wait for session to load before determining navigation
-  const isAdmin = status === "authenticated" && (session?.user as any)?.role === "ADMIN";
-  const navigation = status === "loading"
-    ? baseNavigation // Show basic navigation while loading
-    : isAdmin
-      ? [...baseNavigation, ...adminNavigation]
-      : baseNavigation;
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/login" });

@@ -12,12 +12,14 @@ interface IncomeModalProps {
 export default function IncomeModal({ record, onClose, onSuccess }: IncomeModalProps) {
   const [centers, setCenters] = useState<any[]>([])
   const [programs, setPrograms] = useState<any[]>([])
+  const [partners, setPartners] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
   const [formData, setFormData] = useState({
     month: record?.month || new Date().getMonth() + 1,
     year: record?.year || new Date().getFullYear(),
     centerId: record?.center?.id || '',
     programId: record?.program?.id || '',
+    partnerId: record?.partner?.id || '',
     numberOfClasses: record?.numberOfClasses || 0,
     numberOfStudents: record?.numberOfStudents || 0,
     revenue: record?.revenue || '',
@@ -29,6 +31,7 @@ export default function IncomeModal({ record, onClose, onSuccess }: IncomeModalP
   useEffect(() => {
     fetchCenters()
     fetchPrograms()
+    fetchPartners()
   }, [])
 
   const fetchCenters = async () => {
@@ -41,6 +44,12 @@ export default function IncomeModal({ record, onClose, onSuccess }: IncomeModalP
     const response = await fetch('/api/programs')
     const data = await response.json()
     setPrograms(data)
+  }
+
+  const fetchPartners = async () => {
+    const response = await fetch('/api/partners')
+    const data = await response.json()
+    setPartners(data)
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,6 +176,22 @@ export default function IncomeModal({ record, onClose, onSuccess }: IncomeModalP
               {programs.map((program) => (
                 <option key={program.id} value={program.id}>
                   {program.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="label">Đối tác (tùy chọn)</label>
+            <select
+              value={formData.partnerId}
+              onChange={(e) => setFormData({ ...formData, partnerId: e.target.value })}
+              className="input"
+            >
+              <option value="">Không có đối tác</option>
+              {partners.map((partner) => (
+                <option key={partner.id} value={partner.id}>
+                  {partner.name}
                 </option>
               ))}
             </select>
