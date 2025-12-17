@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, BookOpen, Search, Filter } from 'lucide-react'
+import { Plus, Edit, Trash2, Building2, Search, Filter } from 'lucide-react'
 import { useDragScroll } from '@/lib/use-drag-scroll'
 
-interface Program {
+interface Center {
   id: string
   name: string
   code: string | null
@@ -12,17 +12,17 @@ interface Program {
   updatedAt: string
 }
 
-interface ProgramFormData {
+interface CenterFormData {
   name: string
   code: string
 }
 
-export default function ProgramsPage() {
-  const [programs, setPrograms] = useState<Program[]>([])
+export default function CentersPage() {
+  const [centers, setCenters] = useState<Center[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [editingProgram, setEditingProgram] = useState<Program | null>(null)
-  const [formData, setFormData] = useState<ProgramFormData>({
+  const [editingCenter, setEditingCenter] = useState<Center | null>(null)
+  const [formData, setFormData] = useState<CenterFormData>({
     name: '',
     code: '',
   })
@@ -36,24 +36,24 @@ export default function ProgramsPage() {
   const { ref: tableRef, isDragging, handlers } = useDragScroll({ dragSpeed: 2 })
 
   useEffect(() => {
-    fetchPrograms()
+    fetchCenters()
   }, [])
 
   useEffect(() => {
     setCurrentPage(1) // Reset to page 1 when search term changes
   }, [searchTerm])
 
-  const fetchPrograms = async () => {
+  const fetchCenters = async () => {
     try {
       setLoading(true)
-      // Load all programs for client-side filtering and pagination
-      const response = await fetch('/api/programs?page=1&limit=1000') // Large limit to get all
+      // Load all centers for client-side filtering and pagination
+      const response = await fetch('/api/centers?page=1&limit=1000') // Large limit to get all
       const result = await response.json()
-      setPrograms(result.data || [])
+      setCenters(result.data || [])
       setTotalCount(result.pagination?.totalCount || (result.data?.length || 0))
     } catch (error) {
-      console.error('Error fetching programs:', error)
-      setPrograms([])
+      console.error('Error fetching centers:', error)
+      setCenters([])
       setTotalCount(0)
     } finally {
       setLoading(false)
@@ -64,8 +64,8 @@ export default function ProgramsPage() {
     e.preventDefault()
 
     try {
-      const url = editingProgram ? `/api/programs/${editingProgram.id}` : '/api/programs'
-      const method = editingProgram ? 'PUT' : 'POST'
+      const url = editingCenter ? `/api/centers/${editingCenter.id}` : '/api/centers'
+      const method = editingCenter ? 'PUT' : 'POST'
 
       const response = await fetch(url, {
         method,
@@ -75,67 +75,67 @@ export default function ProgramsPage() {
 
       if (response.ok) {
         setShowModal(false)
-        setEditingProgram(null)
+        setEditingCenter(null)
         setFormData({ name: '', code: '' })
-        fetchPrograms()
+        fetchCenters()
         setCurrentPage(1) // Reset to page 1 after create/update
       } else {
         const error = await response.json()
         alert(error.error || 'Có lỗi xảy ra')
       }
     } catch (error) {
-      console.error('Error saving program:', error)
-      alert('Có lỗi xảy ra khi lưu chương trình')
+      console.error('Error saving center:', error)
+      alert('Có lỗi xảy ra khi lưu trung tâm')
     }
   }
 
-  const handleEdit = (program: Program) => {
-    setEditingProgram(program)
+  const handleEdit = (center: Center) => {
+    setEditingCenter(center)
     setFormData({
-      name: program.name,
-      code: program.code || '',
+      name: center.name,
+      code: center.code || '',
     })
     setShowModal(true)
   }
 
-  const handleDelete = async (programId: string, programName: string) => {
-    if (!confirm(`Bạn có chắc muốn xóa chương trình "${programName}"?`)) return
+  const handleDelete = async (centerId: string, centerName: string) => {
+    if (!confirm(`Bạn có chắc muốn xóa trung tâm "${centerName}"?`)) return
 
     try {
-      const response = await fetch(`/api/programs/${programId}`, {
+      const response = await fetch(`/api/centers/${centerId}`, {
         method: 'DELETE',
       })
 
       if (response.ok) {
-        fetchPrograms()
+        fetchCenters()
         setCurrentPage(1) // Reset to page 1 after delete
       } else {
         const error = await response.json()
         alert(error.error || 'Có lỗi xảy ra')
       }
     } catch (error) {
-      console.error('Error deleting program:', error)
-      alert('Có lỗi xảy ra khi xóa chương trình')
+      console.error('Error deleting center:', error)
+      alert('Có lỗi xảy ra khi xóa trung tâm')
     }
   }
 
-  const filteredPrograms = programs.filter((program) => {
+  const filteredCenters = centers.filter((center) => {
     const matchesSearch =
-      program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (program.code && program.code.toLowerCase().includes(searchTerm.toLowerCase()))
+      center.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (center.code && center.code.toLowerCase().includes(searchTerm.toLowerCase()))
     return matchesSearch
   })
 
   // Calculate pagination for filtered results
-  const paginatedPrograms = filteredPrograms.slice(
+  const paginatedCenters = filteredCenters.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   )
 
-  const maxPages = Math.ceil(filteredPrograms.length / itemsPerPage)
+  const maxPages = Math.ceil(filteredCenters.length / itemsPerPage)
 
   const openCreateModal = () => {
-    setEditingProgram(null)
+    setEditingCenter(null)
     setFormData({ name: '', code: '' })
     setShowModal(true)
   }
@@ -144,14 +144,14 @@ export default function ProgramsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý chương trình</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý trung tâm</h1>
           <p className="text-gray-600 mt-1">
-            Quản lý danh sách các chương trình đào tạo
+            Quản lý danh sách các trung tâm đào tạo
           </p>
         </div>
         <button onClick={openCreateModal} className="btn-primary flex items-center gap-2">
           <Plus className="w-4 h-4" />
-          Thêm chương trình
+          Thêm trung tâm
         </button>
       </div>
 
@@ -166,7 +166,7 @@ export default function ProgramsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên hoặc mã chương trình..."
+              placeholder="Tìm kiếm theo tên hoặc mã trung tâm..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="input pl-10"
@@ -175,7 +175,7 @@ export default function ProgramsPage() {
         </div>
       </div>
 
-      {/* Programs Table */}
+      {/* Centers Table */}
       <div className="card overflow-hidden p-0">
         <div
           ref={tableRef}
@@ -186,10 +186,10 @@ export default function ProgramsPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Tên chương trình
+                  Tên trung tâm
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Mã chương trình
+                  Mã trung tâm
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Ngày tạo
@@ -206,40 +206,40 @@ export default function ProgramsPage() {
                     Đang tải...
                   </td>
                 </tr>
-              ) : paginatedPrograms.length === 0 ? (
+              ) : paginatedCenters.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                    {filteredPrograms.length === 0 ? 'Chưa có chương trình nào' : 'Không có kết quả phù hợp'}
+                    {filteredCenters.length === 0 ? 'Chưa có trung tâm nào' : 'Không có kết quả phù hợp'}
                   </td>
                 </tr>
               ) : (
-                paginatedPrograms.map((program) => (
-                  <tr key={program.id} className="hover:bg-gray-50">
+                paginatedCenters.map((center) => (
+                  <tr key={center.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <BookOpen className="w-5 h-5 text-gray-400" />
+                        <Building2 className="w-5 h-5 text-gray-400" />
                         <span className="text-sm font-medium text-gray-900">
-                          {program.name}
+                          {center.name}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {program.code || '-'}
+                      {center.code || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(program.createdAt).toLocaleDateString('vi-VN')}
+                      {new Date(center.createdAt).toLocaleDateString('vi-VN')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleEdit(program)}
+                          onClick={() => handleEdit(center)}
                           className="text-primary-600 hover:text-primary-900"
                           title="Chỉnh sửa"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(program.id, program.name)}
+                          onClick={() => handleDelete(center.id, center.name)}
                           className="text-danger-600 hover:text-danger-900"
                           title="Xóa"
                         >
@@ -260,7 +260,7 @@ export default function ProgramsPage() {
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <span>
                 Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                {Math.min(currentPage * itemsPerPage, filteredPrograms.length)} của {filteredPrograms.length} kết quả
+                {Math.min(currentPage * itemsPerPage, filteredCenters.length)} của {filteredCenters.length} kết quả
               </span>
             </div>
 
@@ -313,17 +313,17 @@ export default function ProgramsPage() {
         )}
       </div>
 
-      {/* Program Modal */}
+      {/* Center Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                {editingProgram ? 'Chỉnh sửa chương trình' : 'Thêm chương trình mới'}
+                {editingCenter ? 'Chỉnh sửa trung tâm' : 'Thêm trung tâm mới'}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="label">Tên chương trình</label>
+                  <label className="label">Tên trung tâm</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -333,7 +333,7 @@ export default function ProgramsPage() {
                   />
                 </div>
                 <div>
-                  <label className="label">Mã chương trình (tùy chọn)</label>
+                  <label className="label">Mã trung tâm (tùy chọn)</label>
                   <input
                     type="text"
                     value={formData.code}
@@ -350,7 +350,7 @@ export default function ProgramsPage() {
                     Hủy
                   </button>
                   <button type="submit" className="btn-primary">
-                    {editingProgram ? 'Cập nhật' : 'Thêm mới'}
+                    {editingCenter ? 'Cập nhật' : 'Thêm mới'}
                   </button>
                 </div>
               </form>
@@ -361,3 +361,4 @@ export default function ProgramsPage() {
     </div>
   )
 }
+
