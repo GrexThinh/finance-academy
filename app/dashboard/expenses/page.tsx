@@ -1,49 +1,60 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { Plus, Download } from 'lucide-react'
-import { formatCurrency, getMonthName } from '@/lib/utils'
-import { useDragScroll } from '@/lib/use-drag-scroll'
-import ExpenseModal from '@/components/modals/expense-modal'
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { Plus, Download } from "lucide-react";
+import { formatCurrency, getMonthName } from "@/lib/utils";
+import { useDragScroll } from "@/lib/use-drag-scroll";
+import ExpenseModal from "@/components/modals/expense-modal";
 
 interface ExpenseRecord {
-  id: string
-  month: number
-  year: number
-  center: { id: string; name: string }
-  category: string
-  item: string
-  position?: string
-  contractType?: string
-  hours?: string
-  unitPrice?: string
-  amount: string
-  kilometers?: string
-  travelAllowance?: string
-  responsible?: string
-  status?: string
-  total: string
-  notes?: string
+  id: string;
+  month: number;
+  year: number;
+  center: { id: string; name: string };
+  category: string;
+  item: string;
+  position?: string;
+  contractType?: string;
+  hours?: string;
+  unitPrice?: string;
+  amount: string;
+  kilometers?: string;
+  travelAllowance?: string;
+  responsible?: string;
+  status?: string;
+  total: string;
+  notes?: string;
 }
 
-
 export default function ExpensesPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [records, setRecords] = useState<ExpenseRecord[]>([])
-  const [centers, setCenters] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingRecord, setEditingRecord] = useState<ExpenseRecord | null>(null)
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [records, setRecords] = useState<ExpenseRecord[]>([]);
+  const [centers, setCenters] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<ExpenseRecord | null>(
+    null
+  );
+
+  // Filter state
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [selectedCenter, setSelectedCenter] = useState<string>("");
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10)
-  const [totalCount, setTotalCount] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const { ref: tableRef, isDragging, handlers } = useDragScroll({ dragSpeed: 2 })
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const {
+    ref: tableRef,
+    isDragging,
+    handlers,
+  } = useDragScroll({ dragSpeed: 2 });
 
   useEffect(() => {
     if (status === "loading") return; // Still loading
@@ -53,91 +64,92 @@ export default function ExpensesPage() {
       return;
     }
 
-    fetchRecords(1) // Reset to page 1 when component mounts
-    fetchCenters()
-  }, [status, session, router])
+    fetchRecords(1); // Reset to page 1 when component mounts
+    fetchCenters();
+  }, [status, session, router]);
 
   const fetchRecords = async (page = currentPage) => {
     try {
-      setLoading(true)
+      setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
         limit: itemsPerPage.toString(),
-      })
+      });
 
-      const response = await fetch(`/api/expenses?${params}`)
+      const response = await fetch(`/api/expenses?${params}`);
       if (response.ok) {
-        const result = await response.json()
-        setRecords(Array.isArray(result.data) ? result.data : [])
-        setTotalCount(result.pagination?.totalCount || 0)
-        setTotalPages(result.pagination?.totalPages || 0)
-        setCurrentPage(page)
+        const result = await response.json();
+        setRecords(Array.isArray(result.data) ? result.data : []);
+        setTotalCount(result.pagination?.totalCount || 0);
+        setTotalPages(result.pagination?.totalPages || 0);
+        setCurrentPage(page);
       } else {
-        console.error('API error:', response.status, response.statusText)
-        setRecords([])
-        setTotalCount(0)
-        setTotalPages(0)
+        console.error("API error:", response.status, response.statusText);
+        setRecords([]);
+        setTotalCount(0);
+        setTotalPages(0);
       }
     } catch (error) {
-      console.error('Error fetching expense records:', error)
-      setRecords([])
-      setTotalCount(0)
-      setTotalPages(0)
+      console.error("Error fetching expense records:", error);
+      setRecords([]);
+      setTotalCount(0);
+      setTotalPages(0);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchCenters = async () => {
     try {
-      const response = await fetch('/api/centers')
+      const response = await fetch("/api/centers");
       if (response.ok) {
-        const data = await response.json()
-        setCenters(Array.isArray(data) ? data : [])
+        const data = await response.json();
+        setCenters(Array.isArray(data) ? data : []);
       } else {
-        console.error('API error:', response.status, response.statusText)
-        setCenters([])
+        console.error("API error:", response.status, response.statusText);
+        setCenters([]);
       }
     } catch (error) {
-      console.error('Error fetching centers:', error)
-      setCenters([])
+      console.error("Error fetching centers:", error);
+      setCenters([]);
     }
-  }
+  };
 
   const handleExport = async () => {
     try {
-      const params = new URLSearchParams({ type: 'expense' })
-      if (selectedYear) params.append('year', selectedYear)
-      
-      const response = await fetch(`/api/export?${params}`)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `chi-phi-${Date.now()}.xlsx`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      const params = new URLSearchParams({ type: "expense" });
+      if (selectedYear) params.append("year", selectedYear);
+
+      const response = await fetch(`/api/export?${params}`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `chi-phi-${Date.now()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
-      console.error('Error exporting data:', error)
+      console.error("Error exporting data:", error);
     }
-  }
+  };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa bản ghi này?')) return
+    if (!confirm("Bạn có chắc chắn muốn xóa bản ghi này?")) return;
 
     try {
-      await fetch(`/api/expenses?id=${id}`, { method: 'DELETE' })
+      await fetch(`/api/expenses?id=${id}`, { method: "DELETE" });
       // If we're on a page that will be empty after deletion, go to previous page
-      const newTotalCount = totalCount - 1
-      const newTotalPages = Math.ceil(newTotalCount / itemsPerPage)
-      const pageToFetch = currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage
-      fetchRecords(pageToFetch)
+      const newTotalCount = totalCount - 1;
+      const newTotalPages = Math.ceil(newTotalCount / itemsPerPage);
+      const pageToFetch =
+        currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage;
+      fetchRecords(pageToFetch);
     } catch (error) {
-      console.error('Error deleting record:', error)
+      console.error("Error deleting record:", error);
     }
-  }
+  };
 
   // Calculate totals from current page data
   const totals = records.reduce(
@@ -147,7 +159,7 @@ export default function ExpensesPage() {
       count: acc.count + 1,
     }),
     { amount: 0, total: 0, count: 0 }
-  )
+  );
 
   return (
     <div className="space-y-6">
@@ -159,14 +171,17 @@ export default function ExpensesPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button onClick={handleExport} className="btn-secondary flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            className="btn-secondary flex items-center gap-2"
+          >
             <Download className="w-4 h-4" />
             Xuất Excel
           </button>
           <button
             onClick={() => {
-              setEditingRecord(null)
-              setModalOpen(true)
+              setEditingRecord(null);
+              setModalOpen(true);
             }}
             className="btn-primary flex items-center gap-2"
           >
@@ -181,7 +196,9 @@ export default function ExpensesPage() {
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tổng số bản ghi</p>
+              <p className="text-sm font-medium text-gray-600">
+                Tổng số bản ghi
+              </p>
               <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
             </div>
           </div>
@@ -190,7 +207,9 @@ export default function ExpensesPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Tổng số tiền</p>
-              <p className="text-2xl font-bold text-success-600">{formatCurrency(totals.amount.toString())}</p>
+              <p className="text-2xl font-bold text-success-600">
+                {formatCurrency(totals.amount.toString())}
+              </p>
             </div>
           </div>
         </div>
@@ -198,27 +217,34 @@ export default function ExpensesPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Tổng chi phí</p>
-              <p className="text-2xl font-bold text-danger-600">{formatCurrency(totals.total.toString())}</p>
+              <p className="text-2xl font-bold text-danger-600">
+                {formatCurrency(totals.total.toString())}
+              </p>
             </div>
           </div>
         </div>
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Trung bình/bản ghi</p>
+              <p className="text-sm font-medium text-gray-600">
+                Trung bình/bản ghi
+              </p>
               <p className="text-2xl font-bold text-primary-600">
-                {totals.count > 0 ? formatCurrency((totals.total / totals.count).toString()) : formatCurrency('0')}
+                {totals.count > 0
+                  ? formatCurrency((totals.total / totals.count).toString())
+                  : formatCurrency("0")}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-
       <div className="card overflow-hidden p-0">
         <div
           ref={tableRef}
-          className={`overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} select-none`}
+          className={`overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          } select-none`}
           {...handlers}
         >
           <table className="w-full min-w-[800px] text-sm">
@@ -250,13 +276,19 @@ export default function ExpensesPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-2 text-center text-gray-500">
+                  <td
+                    colSpan={7}
+                    className="px-3 py-2 text-center text-gray-500"
+                  >
                     Đang tải...
                   </td>
                 </tr>
               ) : records.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-2 text-center text-gray-500">
+                  <td
+                    colSpan={7}
+                    className="px-3 py-2 text-center text-gray-500"
+                  >
                     Không có dữ liệu
                   </td>
                 </tr>
@@ -285,8 +317,8 @@ export default function ExpensesPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
-                            setEditingRecord(record)
-                            setModalOpen(true)
+                            setEditingRecord(record);
+                            setModalOpen(true);
                           }}
                           className="text-primary-600 hover:text-primary-700 font-medium"
                         >
@@ -313,7 +345,8 @@ export default function ExpensesPage() {
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <span>
                 Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                {Math.min(currentPage * itemsPerPage, totalCount)} của {totalCount} kết quả
+                {Math.min(currentPage * itemsPerPage, totalCount)} của{" "}
+                {totalCount} kết quả
               </span>
             </div>
 
@@ -370,16 +403,16 @@ export default function ExpensesPage() {
         <ExpenseModal
           record={editingRecord}
           onClose={() => {
-            setModalOpen(false)
-            setEditingRecord(null)
+            setModalOpen(false);
+            setEditingRecord(null);
           }}
           onSuccess={() => {
-            setModalOpen(false)
-            setEditingRecord(null)
-            fetchRecords(1) // Reset to page 1 after create/update
+            setModalOpen(false);
+            setEditingRecord(null);
+            fetchRecords(1); // Reset to page 1 after create/update
           }}
         />
       )}
     </div>
-  )
+  );
 }
