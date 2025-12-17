@@ -27,19 +27,34 @@ export default function CentersPage() {
     code: '',
   })
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const { ref: tableRef, isDragging, handlers } = useDragScroll({ dragSpeed: 2 })
 
   useEffect(() => {
     fetchCenters()
   }, [])
 
+  useEffect(() => {
+    setCurrentPage(1) // Reset to page 1 when search term changes
+  }, [searchTerm])
+
   const fetchCenters = async () => {
     try {
-      const response = await fetch('/api/centers')
-      const data = await response.json()
-      setCenters(data)
+      setLoading(true)
+      // Load all centers for client-side filtering and pagination
+      const response = await fetch('/api/centers?page=1&limit=1000') // Large limit to get all
+      const result = await response.json()
+      setCenters(result.data || [])
+      setTotalCount(result.pagination?.totalCount || (result.data?.length || 0))
     } catch (error) {
       console.error('Error fetching centers:', error)
+      setCenters([])
+      setTotalCount(0)
     } finally {
       setLoading(false)
     }
@@ -63,6 +78,7 @@ export default function CentersPage() {
         setEditingCenter(null)
         setFormData({ name: '', code: '' })
         fetchCenters()
+        setCurrentPage(1) // Reset to page 1 after create/update
       } else {
         const error = await response.json()
         alert(error.error || 'Có lỗi xảy ra')
@@ -92,6 +108,7 @@ export default function CentersPage() {
 
       if (response.ok) {
         fetchCenters()
+        setCurrentPage(1) // Reset to page 1 after delete
       } else {
         const error = await response.json()
         alert(error.error || 'Có lỗi xảy ra')
@@ -108,6 +125,14 @@ export default function CentersPage() {
       (center.code && center.code.toLowerCase().includes(searchTerm.toLowerCase()))
     return matchesSearch
   })
+
+  // Calculate pagination for filtered results
+  const paginatedCenters = filteredCenters.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const maxPages = Math.ceil(filteredCenters.length / itemsPerPage)
 
   const openCreateModal = () => {
     setEditingCenter(null)
@@ -181,14 +206,14 @@ export default function CentersPage() {
                     Đang tải...
                   </td>
                 </tr>
-              ) : filteredCenters.length === 0 ? (
+              ) : paginatedCenters.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                    Chưa có trung tâm nào
+                    {filteredCenters.length === 0 ? 'Chưa có trung tâm nào' : 'Không có kết quả phù hợp'}
                   </td>
                 </tr>
               ) : (
-                filteredCenters.map((center) => (
+                paginatedCenters.map((center) => (
                   <tr key={center.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
@@ -228,6 +253,64 @@ export default function CentersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {maxPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <span>
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(currentPage * itemsPerPage, filteredCenters.length)} của {filteredCenters.length} kết quả
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Trước
+              </button>
+
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(5, maxPages) }, (_, i) => {
+                let pageNum;
+                if (maxPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= maxPages - 2) {
+                  pageNum = maxPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-1 text-sm border rounded-md ${
+                      currentPage === pageNum
+                        ? "bg-primary-600 text-white border-primary-600"
+                        : "border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === maxPages}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Center Modal */}

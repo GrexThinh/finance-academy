@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { Download } from 'lucide-react'
-import { useDragScroll } from '@/lib/use-drag-scroll'
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { Download } from "lucide-react";
+import { useDragScroll } from "@/lib/use-drag-scroll";
 import {
   BarChart,
   Bar,
@@ -15,27 +15,37 @@ import {
   Legend,
   ResponsiveContainer,
   Cell,
-} from 'recharts'
-import { formatCurrency, getMonthName } from '@/lib/utils'
+} from "recharts";
+import { formatCurrency, getMonthName } from "@/lib/utils";
 
 interface ProfitLossData {
-  centerId: string
-  centerName: string
-  year: number
-  month: number
-  income: number
-  expense: number
-  profit: number
+  centerId: string;
+  centerName: string;
+  year: number;
+  month: number;
+  income: number;
+  expense: number;
+  profit: number;
 }
 
 export default function ProfitLossPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [data, setData] = useState<ProfitLossData[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedYear, setSelectedYear] = useState<string>('')
-  const [selectedCenter, setSelectedCenter] = useState<string>('')
-  const { ref: tableRef, isDragging, handlers } = useDragScroll({ dragSpeed: 2 })
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [data, setData] = useState<ProfitLossData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedCenter, setSelectedCenter] = useState<string>("");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const {
+    ref: tableRef,
+    isDragging,
+    handlers,
+  } = useDragScroll({ dragSpeed: 2 });
 
   useEffect(() => {
     if (status === "loading") return; // Still loading
@@ -45,58 +55,99 @@ export default function ProfitLossPage() {
       return;
     }
 
-    fetchData()
-  }, [status, session, router, selectedYear, selectedCenter])
+    fetchData(1); // Reset to page 1 when filters change
+  }, [status, session, router, selectedYear, selectedCenter]);
 
-  const fetchData = async () => {
+  const fetchData = async (page = currentPage) => {
     try {
-      const params = new URLSearchParams()
-      if (selectedYear) params.append('year', selectedYear)
-      if (selectedCenter) params.append('centerId', selectedCenter)
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: itemsPerPage.toString(),
+      });
+      if (selectedYear) params.append("year", selectedYear);
+      if (selectedCenter) params.append("centerId", selectedCenter);
 
-      const response = await fetch(`/api/analytics/profit-loss?${params}`)
-      const result = await response.json()
-      setData(result)
+      const response = await fetch(`/api/analytics/profit-loss?${params}`);
+      const result = await response.json();
+      setData(result.data || []);
+      setTotalCount(result.pagination?.totalCount || 0);
+      setTotalPages(result.pagination?.totalPages || 0);
+      setCurrentPage(page);
     } catch (error) {
-      console.error('Error fetching profit/loss data:', error)
+      console.error("Error fetching profit/loss data:", error);
+      setData([]);
+      setTotalCount(0);
+      setTotalPages(0);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const fetchAllDataForChart = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedYear) params.append("year", selectedYear);
+      if (selectedCenter) params.append("centerId", selectedCenter);
+
+      // Fetch all data (no pagination) for chart
+      const response = await fetch(`/api/analytics/profit-loss?${params}`);
+      const result = await response.json();
+      return result.data || [];
+    } catch (error) {
+      console.error("Error fetching all profit/loss data for chart:", error);
+      return [];
+    }
+  };
 
   const handleExport = async () => {
     try {
-      const params = new URLSearchParams({ type: 'combined' })
-      if (selectedYear) params.append('year', selectedYear)
-      if (selectedCenter) params.append('centerId', selectedCenter)
-      
-      const response = await fetch(`/api/export?${params}`)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `bao-cao-loi-nhuan-${Date.now()}.xlsx`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      const params = new URLSearchParams({ type: "combined" });
+      if (selectedYear) params.append("year", selectedYear);
+      if (selectedCenter) params.append("centerId", selectedCenter);
+
+      const response = await fetch(`/api/export?${params}`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bao-cao-loi-nhuan-${Date.now()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
-      console.error('Error exporting data:', error)
+      console.error("Error exporting data:", error);
     }
-  }
+  };
 
-  const years = Array.from(new Set(data.map((d) => d.year))).sort((a, b) => b - a)
+  // Use all data for chart (not paginated)
+  const [allData, setAllData] = useState<ProfitLossData[]>([]);
+
+  useEffect(() => {
+    const loadChartData = async () => {
+      const chartData = await fetchAllDataForChart();
+      setAllData(chartData);
+    };
+    if (status === "authenticated") {
+      loadChartData();
+    }
+  }, [selectedYear, selectedCenter, status]);
+
+  const years = Array.from(new Set(allData.map((d) => d.year))).sort(
+    (a, b) => b - a
+  );
   const centers = Array.from(
-    new Map(data.map((d) => [d.centerId, d.centerName])).entries()
-  )
+    new Map(allData.map((d) => [d.centerId, d.centerName])).entries()
+  );
 
-  // Aggregate by center
-  const centerAggregation = data.reduce((acc, item) => {
-    const existing = acc.find((a) => a.centerId === item.centerId)
+  // Aggregate by center for chart
+  const centerAggregation = allData.reduce((acc, item) => {
+    const existing = acc.find((a) => a.centerId === item.centerId);
     if (existing) {
-      existing.income += item.income
-      existing.expense += item.expense
-      existing.profit += item.profit
+      existing.income += item.income;
+      existing.expense += item.expense;
+      existing.profit += item.profit;
     } else {
       acc.push({
         centerId: item.centerId,
@@ -104,28 +155,33 @@ export default function ProfitLossPage() {
         income: item.income,
         expense: item.expense,
         profit: item.profit,
-      })
+      });
     }
-    return acc
-  }, [] as any[])
+    return acc;
+  }, [] as any[]);
 
   const chartData = centerAggregation.map((item) => ({
     name: item.centerName,
-    'Doanh thu': item.income,
-    'Chi phí': item.expense,
-    'Lợi nhuận': item.profit,
-  }))
+    "Doanh thu": item.income,
+    "Chi phí": item.expense,
+    "Lợi nhuận": item.profit,
+  }));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Phân tích lợi nhuận/lỗ</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Phân tích lợi nhuận/lỗ
+          </h1>
           <p className="text-gray-600 mt-1">
             Xem báo cáo lợi nhuận và lỗ theo từng trung tâm
           </p>
         </div>
-        <button onClick={handleExport} className="btn-primary flex items-center gap-2">
+        <button
+          onClick={handleExport}
+          className="btn-primary flex items-center gap-2"
+        >
           <Download className="w-4 h-4" />
           Xuất báo cáo
         </button>
@@ -194,7 +250,7 @@ export default function ProfitLossPage() {
                 {chartData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={entry['Lợi nhuận'] >= 0 ? '#0ea5e9' : '#f97316'}
+                    fill={entry["Lợi nhuận"] >= 0 ? "#0ea5e9" : "#f97316"}
                   />
                 ))}
               </Bar>
@@ -207,7 +263,9 @@ export default function ProfitLossPage() {
       <div className="card overflow-hidden p-0">
         <div
           ref={tableRef}
-          className={`overflow-x-auto ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} select-none`}
+          className={`overflow-x-auto ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          } select-none`}
           {...handlers}
         >
           <table className="w-full">
@@ -236,20 +294,26 @@ export default function ProfitLossPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan={6}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     Đang tải...
                   </td>
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan={6}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     Không có dữ liệu
                   </td>
                 </tr>
               ) : (
                 data.map((item, index) => {
                   const profitMargin =
-                    item.income > 0 ? (item.profit / item.income) * 100 : 0
+                    item.income > 0 ? (item.profit / item.income) * 100 : 0;
                   return (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -266,26 +330,89 @@ export default function ProfitLossPage() {
                       </td>
                       <td
                         className={`px-6 py-4 whitespace-nowrap text-sm font-bold ${
-                          item.profit >= 0 ? 'text-primary-600' : 'text-orange-600'
+                          item.profit >= 0
+                            ? "text-primary-600"
+                            : "text-orange-600"
                         }`}
                       >
                         {formatCurrency(item.profit)}
                       </td>
                       <td
                         className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${
-                          profitMargin >= 0 ? 'text-primary-600' : 'text-orange-600'
+                          profitMargin >= 0
+                            ? "text-primary-600"
+                            : "text-orange-600"
                         }`}
                       >
                         {profitMargin.toFixed(2)}%
                       </td>
                     </tr>
-                  )
+                  );
                 })
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <span>
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(currentPage * itemsPerPage, totalCount)} của{" "}
+                {totalCount} kết quả
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => fetchData(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Trước
+              </button>
+
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => fetchData(pageNum)}
+                    className={`px-3 py-1 text-sm border rounded-md ${
+                      currentPage === pageNum
+                        ? "bg-primary-600 text-white border-primary-600"
+                        : "border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => fetchData(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-  )
+  );
 }

@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     const centerId = searchParams.get("centerId");
     const year = searchParams.get("year");
     const month = searchParams.get("month");
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
 
     const where: any = {};
     if (centerId) where.centerId = centerId;
@@ -91,7 +93,23 @@ export async function GET(request: NextRequest) {
       return b.month - a.month;
     });
 
-    return NextResponse.json(profitLossData);
+    // Apply pagination
+    const totalCount = profitLossData.length
+    const totalPages = Math.ceil(totalCount / limit)
+    const skip = (page - 1) * limit
+    const paginatedData = profitLossData.slice(skip, skip + limit)
+
+    return NextResponse.json({
+      data: paginatedData,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    });
   } catch (error) {
     console.error("Error calculating profit/loss:", error);
     return NextResponse.json(

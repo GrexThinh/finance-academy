@@ -9,6 +9,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const searchParams = request.nextUrl.searchParams
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+
+    // Get total count for pagination
+    const totalCount = await prisma.expenseRecord.count()
+
+    // Calculate pagination values
+    const totalPages = Math.ceil(totalCount / limit)
+    const skip = (page - 1) * limit
+
     const expenseRecords = await prisma.expenseRecord.findMany({
       include: {
         center: true,
@@ -17,9 +28,21 @@ export async function GET(request: NextRequest) {
         { year: 'desc' },
         { month: 'desc' },
       ],
+      skip,
+      take: limit,
     })
 
-    return NextResponse.json(expenseRecords)
+    return NextResponse.json({
+      data: expenseRecords,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    })
   } catch (error) {
     console.error('Error fetching expense records:', error)
     return NextResponse.json(

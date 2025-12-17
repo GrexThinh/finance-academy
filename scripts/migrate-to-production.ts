@@ -15,11 +15,9 @@ const productionConnectionString =
   process.env.DATABASE_URL ||
   "postgres://cbb1b02275527dd9f979feeaffd122d6bb619d31369a1d8c6e88bc6b292dbf3d:sk_X419nBTdw1WD08JjUVyZv@db.prisma.io:5432/postgres?sslmode=require";
 
-const localPool = new Pool({ connectionString: localConnectionString });
-const localAdapter = new PrismaPg(localPool);
-const localPrisma = new PrismaClient({ adapter: localAdapter });
-
-const productionPool = new Pool({ connectionString: productionConnectionString });
+const productionPool = new Pool({
+  connectionString: productionConnectionString,
+});
 const productionAdapter = new PrismaPg(productionPool);
 const productionPrisma = new PrismaClient({ adapter: productionAdapter });
 
@@ -31,98 +29,31 @@ interface MigrationData {
   expenseRecords: any[];
 }
 
-async function exportFromLocal(): Promise<MigrationData> {
-  console.log("📤 Exporting data from local database...");
+async function loadFromBackup(): Promise<MigrationData> {
+  console.log("📤 Loading data from backup file...");
 
+  const backupPath = path.join(process.cwd(), "migration-backup.json");
 
-  const centers = await localPrisma.center.findMany({
-    select: {
-      id: true,
-      name: true,
-      code: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  if (!fs.existsSync(backupPath)) {
+    throw new Error(`Backup file not found: ${backupPath}`);
+  }
 
-  const programs = await localPrisma.program.findMany({
-    select: {
-      id: true,
-      name: true,
-      code: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-
-  const partners = await localPrisma.partner.findMany({
-    select: {
-      id: true,
-      name: true,
-      code: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-
-  const incomeRecords = await localPrisma.incomeRecord.findMany({
-    select: {
-      id: true,
-      month: true,
-      year: true,
-      centerId: true,
-      programId: true,
-      numberOfClasses: true,
-      numberOfStudents: true,
-      revenue: true,
-      status: true,
-      notes: true,
-      uploadedFileUrl: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-
-  const expenseRecords = await localPrisma.expenseRecord.findMany({
-    select: {
-      id: true,
-      month: true,
-      year: true,
-      centerId: true,
-      category: true,
-      item: true,
-      position: true,
-      contractType: true,
-      hours: true,
-      unitPrice: true,
-      amount: true,
-      kilometers: true,
-      travelAllowance: true,
-      responsible: true,
-      status: true,
-      total: true,
-      notes: true,
-      uploadedFileUrl: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  const backupData = JSON.parse(fs.readFileSync(backupPath, "utf-8"));
 
   const data: MigrationData = {
-    centers,
-    programs,
-    partners,
-    incomeRecords,
-    expenseRecords,
+    centers: backupData.centers || [],
+    programs: backupData.programs || [],
+    partners: backupData.partners || [],
+    incomeRecords: backupData.incomeRecords || [],
+    expenseRecords: backupData.expenseRecords || [],
   };
 
-  // Save to file as backup
-  const backupPath = path.join(process.cwd(), "migration-backup.json");
-  fs.writeFileSync(backupPath, JSON.stringify(data, null, 2));
-  console.log(`💾 Backup saved to ${backupPath}`);
-
-  console.log(`✅ Exported ${centers.length} centers, ${programs.length} programs, ${partners.length} partners`);
-  console.log(`   ${incomeRecords.length} income records, ${expenseRecords.length} expense records`);
+  console.log(
+    `✅ Loaded ${data.centers.length} centers, ${data.programs.length} programs, ${data.partners.length} partners`
+  );
+  console.log(
+    `   ${data.incomeRecords.length} income records, ${data.expenseRecords.length} expense records`
+  );
 
   return data;
 }
@@ -180,6 +111,40 @@ async function setupProductionSchema() {
       "status" TEXT,
       "notes" TEXT,
       "uploadedFileUrl" TEXT,
+      "tuitionFeeFullYear" DECIMAL(15,2),
+      "tuitionFeeHalfYear" DECIMAL(15,2),
+      "tuitionFeeDiscount" DECIMAL(15,2),
+      "tuitionFeeOld" DECIMAL(15,2),
+      "sessionCount" INTEGER,
+      "sessionCountNew" INTEGER,
+      "numClassesHalfFee" INTEGER,
+      "numClassesFullFee" INTEGER,
+      "numStudentsHalfFee" INTEGER,
+      "numStudentsFullFee" INTEGER,
+      "numDiscountedStudents" INTEGER,
+      "discount" DECIMAL(15,2),
+      "payType" TEXT,
+      "oldStudent" TEXT,
+      "freeStudentCount" INTEGER,
+      "totalTuitionFee" DECIMAL(15,2),
+      "facilitiesFee" DECIMAL(15,2),
+      "adminDeduction" DECIMAL(15,2),
+      "agentCommission" DECIMAL(15,2),
+      "teacherDeduction" DECIMAL(15,2),
+      "totalDeduction" DECIMAL(15,2),
+      "actualReceivable" DECIMAL(15,2),
+      "submittedToCenter" DECIMAL(15,2),
+      "collectionDate" TIMESTAMP,
+      "difference" DECIMAL(15,2),
+      "selfEnrollCount" INTEGER,
+      "retentionRate" TEXT,
+      "staffInvolved" TEXT,
+      "hrRetention" TEXT,
+      "hrContract" TEXT,
+      "schoolDeductionMethod" TEXT,
+      "centerDeductionMethod" TEXT,
+      "contractStatus" TEXT,
+      "teacherRate" TEXT,
       "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
       "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
     );
@@ -217,7 +182,9 @@ async function setupProductionSchema() {
       ADD CONSTRAINT "income_records_centerId_fkey" FOREIGN KEY ("centerId") REFERENCES "centers"("id") ON DELETE CASCADE;
     `;
   } catch (error) {
-    console.log("⚠️ income_records_centerId_fkey constraint might already exist");
+    console.log(
+      "⚠️ income_records_centerId_fkey constraint might already exist"
+    );
   }
 
   try {
@@ -226,7 +193,9 @@ async function setupProductionSchema() {
       ADD CONSTRAINT "income_records_programId_fkey" FOREIGN KEY ("programId") REFERENCES "programs"("id") ON DELETE CASCADE;
     `;
   } catch (error) {
-    console.log("⚠️ income_records_programId_fkey constraint might already exist");
+    console.log(
+      "⚠️ income_records_programId_fkey constraint might already exist"
+    );
   }
 
   try {
@@ -235,7 +204,9 @@ async function setupProductionSchema() {
       ADD CONSTRAINT "income_records_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "partners"("id") ON DELETE SET NULL;
     `;
   } catch (error) {
-    console.log("⚠️ income_records_partnerId_fkey constraint might already exist");
+    console.log(
+      "⚠️ income_records_partnerId_fkey constraint might already exist"
+    );
   }
 
   try {
@@ -244,7 +215,9 @@ async function setupProductionSchema() {
       ADD CONSTRAINT "expense_records_centerId_fkey" FOREIGN KEY ("centerId") REFERENCES "centers"("id") ON DELETE CASCADE;
     `;
   } catch (error) {
-    console.log("⚠️ expense_records_centerId_fkey constraint might already exist");
+    console.log(
+      "⚠️ expense_records_centerId_fkey constraint might already exist"
+    );
   }
 
   // Add indexes (ignore if already exists)
@@ -331,12 +304,49 @@ async function importToProduction(data: MigrationData) {
         year: record.year,
         centerId: record.centerId,
         programId: record.programId,
+        partnerId: record.partnerId,
         numberOfClasses: record.numberOfClasses,
         numberOfStudents: record.numberOfStudents,
         revenue: record.revenue,
         status: record.status,
         notes: record.notes,
         uploadedFileUrl: record.uploadedFileUrl,
+        tuitionFeeFullYear: record.tuitionFeeFullYear,
+        tuitionFeeHalfYear: record.tuitionFeeHalfYear,
+        tuitionFeeDiscount: record.tuitionFeeDiscount,
+        tuitionFeeOld: record.tuitionFeeOld,
+        sessionCount: record.sessionCount,
+        sessionCountNew: record.sessionCountNew,
+        numClassesHalfFee: record.numClassesHalfFee,
+        numClassesFullFee: record.numClassesFullFee,
+        numStudentsHalfFee: record.numStudentsHalfFee,
+        numStudentsFullFee: record.numStudentsFullFee,
+        numDiscountedStudents: record.numDiscountedStudents,
+        discount: record.discount,
+        payType: record.payType,
+        oldStudent: record.oldStudent,
+        freeStudentCount: record.freeStudentCount,
+        totalTuitionFee: record.totalTuitionFee,
+        facilitiesFee: record.facilitiesFee,
+        adminDeduction: record.adminDeduction,
+        agentCommission: record.agentCommission,
+        teacherDeduction: record.teacherDeduction,
+        totalDeduction: record.totalDeduction,
+        actualReceivable: record.actualReceivable,
+        submittedToCenter: record.submittedToCenter,
+        collectionDate: record.collectionDate
+          ? new Date(record.collectionDate)
+          : null,
+        difference: record.difference,
+        selfEnrollCount: record.selfEnrollCount,
+        retentionRate: record.retentionRate,
+        staffInvolved: record.staffInvolved,
+        hrRetention: record.hrRetention,
+        hrContract: record.hrContract,
+        schoolDeductionMethod: record.schoolDeductionMethod,
+        centerDeductionMethod: record.centerDeductionMethod,
+        contractStatus: record.contractStatus,
+        teacherRate: record.teacherRate,
         updatedAt: new Date(record.updatedAt),
       },
       create: {
@@ -345,12 +355,49 @@ async function importToProduction(data: MigrationData) {
         year: record.year,
         centerId: record.centerId,
         programId: record.programId,
+        partnerId: record.partnerId,
         numberOfClasses: record.numberOfClasses,
         numberOfStudents: record.numberOfStudents,
         revenue: record.revenue,
         status: record.status,
         notes: record.notes,
         uploadedFileUrl: record.uploadedFileUrl,
+        tuitionFeeFullYear: record.tuitionFeeFullYear,
+        tuitionFeeHalfYear: record.tuitionFeeHalfYear,
+        tuitionFeeDiscount: record.tuitionFeeDiscount,
+        tuitionFeeOld: record.tuitionFeeOld,
+        sessionCount: record.sessionCount,
+        sessionCountNew: record.sessionCountNew,
+        numClassesHalfFee: record.numClassesHalfFee,
+        numClassesFullFee: record.numClassesFullFee,
+        numStudentsHalfFee: record.numStudentsHalfFee,
+        numStudentsFullFee: record.numStudentsFullFee,
+        numDiscountedStudents: record.numDiscountedStudents,
+        discount: record.discount,
+        payType: record.payType,
+        oldStudent: record.oldStudent,
+        freeStudentCount: record.freeStudentCount,
+        totalTuitionFee: record.totalTuitionFee,
+        facilitiesFee: record.facilitiesFee,
+        adminDeduction: record.adminDeduction,
+        agentCommission: record.agentCommission,
+        teacherDeduction: record.teacherDeduction,
+        totalDeduction: record.totalDeduction,
+        actualReceivable: record.actualReceivable,
+        submittedToCenter: record.submittedToCenter,
+        collectionDate: record.collectionDate
+          ? new Date(record.collectionDate)
+          : null,
+        difference: record.difference,
+        selfEnrollCount: record.selfEnrollCount,
+        retentionRate: record.retentionRate,
+        staffInvolved: record.staffInvolved,
+        hrRetention: record.hrRetention,
+        hrContract: record.hrContract,
+        schoolDeductionMethod: record.schoolDeductionMethod,
+        centerDeductionMethod: record.centerDeductionMethod,
+        contractStatus: record.contractStatus,
+        teacherRate: record.teacherRate,
         createdAt: new Date(record.createdAt),
         updatedAt: new Date(record.updatedAt),
       },
@@ -429,10 +476,12 @@ async function verifyMigration() {
 
 async function main() {
   try {
-    console.log("🚀 Starting database migration from local to production...\n");
+    console.log(
+      "🚀 Starting database migration from backup to production...\n"
+    );
 
-    // Step 1: Export data from local database
-    const migrationData = await exportFromLocal();
+    // Step 1: Load data from backup file
+    const migrationData = await loadFromBackup();
     console.log("");
 
     // Step 2: Set up production schema
@@ -448,12 +497,10 @@ async function main() {
     console.log("");
 
     console.log("🎉 Migration completed successfully!");
-
   } catch (error) {
     console.error("❌ Migration failed:", error);
     process.exit(1);
   } finally {
-    await localPrisma.$disconnect();
     await productionPrisma.$disconnect();
   }
 }

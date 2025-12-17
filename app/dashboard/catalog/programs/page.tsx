@@ -27,19 +27,34 @@ export default function ProgramsPage() {
     code: '',
   })
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const { ref: tableRef, isDragging, handlers } = useDragScroll({ dragSpeed: 2 })
 
   useEffect(() => {
     fetchPrograms()
   }, [])
 
+  useEffect(() => {
+    setCurrentPage(1) // Reset to page 1 when search term changes
+  }, [searchTerm])
+
   const fetchPrograms = async () => {
     try {
-      const response = await fetch('/api/programs')
-      const data = await response.json()
-      setPrograms(data)
+      setLoading(true)
+      // Load all programs for client-side filtering and pagination
+      const response = await fetch('/api/programs?page=1&limit=1000') // Large limit to get all
+      const result = await response.json()
+      setPrograms(result.data || [])
+      setTotalCount(result.pagination?.totalCount || (result.data?.length || 0))
     } catch (error) {
       console.error('Error fetching programs:', error)
+      setPrograms([])
+      setTotalCount(0)
     } finally {
       setLoading(false)
     }
@@ -63,6 +78,7 @@ export default function ProgramsPage() {
         setEditingProgram(null)
         setFormData({ name: '', code: '' })
         fetchPrograms()
+        setCurrentPage(1) // Reset to page 1 after create/update
       } else {
         const error = await response.json()
         alert(error.error || 'Có lỗi xảy ra')
@@ -92,6 +108,7 @@ export default function ProgramsPage() {
 
       if (response.ok) {
         fetchPrograms()
+        setCurrentPage(1) // Reset to page 1 after delete
       } else {
         const error = await response.json()
         alert(error.error || 'Có lỗi xảy ra')
@@ -108,6 +125,14 @@ export default function ProgramsPage() {
       (program.code && program.code.toLowerCase().includes(searchTerm.toLowerCase()))
     return matchesSearch
   })
+
+  // Calculate pagination for filtered results
+  const paginatedPrograms = filteredPrograms.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const maxPages = Math.ceil(filteredPrograms.length / itemsPerPage)
 
   const openCreateModal = () => {
     setEditingProgram(null)
@@ -181,14 +206,14 @@ export default function ProgramsPage() {
                     Đang tải...
                   </td>
                 </tr>
-              ) : filteredPrograms.length === 0 ? (
+              ) : paginatedPrograms.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                    Chưa có chương trình nào
+                    {filteredPrograms.length === 0 ? 'Chưa có chương trình nào' : 'Không có kết quả phù hợp'}
                   </td>
                 </tr>
               ) : (
-                filteredPrograms.map((program) => (
+                paginatedPrograms.map((program) => (
                   <tr key={program.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
@@ -228,6 +253,64 @@ export default function ProgramsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {maxPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <span>
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(currentPage * itemsPerPage, filteredPrograms.length)} của {filteredPrograms.length} kết quả
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Trước
+              </button>
+
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(5, maxPages) }, (_, i) => {
+                let pageNum;
+                if (maxPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= maxPages - 2) {
+                  pageNum = maxPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-1 text-sm border rounded-md ${
+                      currentPage === pageNum
+                        ? "bg-primary-600 text-white border-primary-600"
+                        : "border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === maxPages}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Program Modal */}

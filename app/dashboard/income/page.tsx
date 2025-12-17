@@ -21,6 +21,42 @@ interface IncomeRecord {
   status?: string;
   notes?: string;
   uploadedFileUrl?: string;
+
+  // New spreadsheet fields
+  tuitionFeeFullYear?: string;
+  tuitionFeeHalfYear?: string;
+  tuitionFeeDiscount?: string;
+  tuitionFeeOld?: string;
+  sessionCount?: number;
+  sessionCountNew?: number;
+  numClassesHalfFee?: number;
+  numClassesFullFee?: number;
+  numStudentsHalfFee?: number;
+  numStudentsFullFee?: number;
+  numDiscountedStudents?: number;
+  discount?: string;
+  payType?: string;
+  oldStudent?: string;
+  freeStudentCount?: number;
+  totalTuitionFee?: string;
+  facilitiesFee?: string;
+  adminDeduction?: string;
+  agentCommission?: string;
+  teacherDeduction?: string;
+  totalDeduction?: string;
+  actualReceivable?: string;
+  submittedToCenter?: string;
+  collectionDate?: string | null;
+  difference?: string;
+  selfEnrollCount?: number;
+  retentionRate?: string;
+  staffInvolved?: string;
+  hrRetention?: string;
+  hrContract?: string;
+  schoolDeductionMethod?: string;
+  centerDeductionMethod?: string;
+  contractStatus?: string;
+  teacherRate?: string;
 }
 
 export default function IncomePage() {
@@ -32,7 +68,17 @@ export default function IncomePage() {
   const [editingRecord, setEditingRecord] = useState<IncomeRecord | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState<string>("");
-  const { ref: tableRef, isDragging, handlers } = useDragScroll({ dragSpeed: 2 });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const {
+    ref: tableRef,
+    isDragging,
+    handlers,
+  } = useDragScroll({ dragSpeed: 2 });
 
   useEffect(() => {
     if (status === "loading") return; // Still loading
@@ -42,22 +88,43 @@ export default function IncomePage() {
       return;
     }
 
-    fetchRecords();
+    fetchRecords(1); // Reset to page 1 when component mounts
   }, [status, session, router]);
 
-  const fetchRecords = async () => {
+  useEffect(() => {
+    if (status === "authenticated" && session) {
+      fetchRecords(1); // Reset to page 1 when year filter changes
+    }
+  }, [selectedYear]);
+
+  const fetchRecords = async (page = currentPage) => {
     try {
-      const response = await fetch("/api/income");
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: itemsPerPage.toString(),
+      });
+
+      if (selectedYear) params.append("year", selectedYear);
+
+      const response = await fetch(`/api/income?${params}`);
       if (response.ok) {
-        const data = await response.json();
-        setRecords(Array.isArray(data) ? data : []);
+        const result = await response.json();
+        setRecords(Array.isArray(result.data) ? result.data : []);
+        setTotalCount(result.pagination?.totalCount || 0);
+        setTotalPages(result.pagination?.totalPages || 0);
+        setCurrentPage(page);
       } else {
         console.error("API error:", response.status, response.statusText);
         setRecords([]);
+        setTotalCount(0);
+        setTotalPages(0);
       }
     } catch (error) {
       console.error("Error fetching income records:", error);
       setRecords([]);
+      setTotalCount(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
@@ -88,24 +155,17 @@ export default function IncomePage() {
 
     try {
       await fetch(`/api/income?id=${id}`, { method: "DELETE" });
-      fetchRecords();
+      // If we're on a page that will be empty after deletion, go to previous page
+      const newTotalCount = totalCount - 1;
+      const newTotalPages = Math.ceil(newTotalCount / itemsPerPage);
+      const pageToFetch = currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage;
+      fetchRecords(pageToFetch);
     } catch (error) {
       console.error("Error deleting record:", error);
     }
   };
 
-  const filteredRecords = records.filter((record) => {
-    const matchesSearch =
-      (record.center?.name || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (record.program?.name || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-    const matchesYear =
-      !selectedYear || record.year.toString() === selectedYear;
-    return matchesSearch && matchesYear;
-  });
+  // Records are now filtered server-side, so we use them directly
 
   const years = Array.from(new Set(records.map((r) => r.year))).sort(
     (a, b) => b - a
@@ -178,7 +238,9 @@ export default function IncomePage() {
       <div className="card overflow-hidden p-0">
         <div
           ref={tableRef}
-          className={`overflow-x-auto ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} select-none`}
+          className={`overflow-x-auto ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          } select-none`}
           {...handlers}
         >
           <table className="w-full">
@@ -220,7 +282,7 @@ export default function IncomePage() {
                     Đang tải...
                   </td>
                 </tr>
-              ) : filteredRecords.length === 0 ? (
+              ) : records.length === 0 ? (
                 <tr>
                   <td
                     colSpan={8}
@@ -230,7 +292,7 @@ export default function IncomePage() {
                   </td>
                 </tr>
               ) : (
-                filteredRecords.map((record) => (
+                records.map((record) => (
                   <tr key={record.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {getMonthName(record.month)} {record.year}
@@ -278,6 +340,64 @@ export default function IncomePage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <span>
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(currentPage * itemsPerPage, totalCount)} của {totalCount} kết quả
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => fetchRecords(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Trước
+              </button>
+
+              {/* Page numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => fetchRecords(pageNum)}
+                    className={`px-3 py-1 text-sm border rounded-md ${
+                      currentPage === pageNum
+                        ? "bg-primary-600 text-white border-primary-600"
+                        : "border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => fetchRecords(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal */}
@@ -291,7 +411,7 @@ export default function IncomePage() {
           onSuccess={() => {
             setModalOpen(false);
             setEditingRecord(null);
-            fetchRecords();
+            fetchRecords(1); // Reset to page 1 after create/update
           }}
         />
       )}
