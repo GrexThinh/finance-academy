@@ -325,6 +325,9 @@ export default function IncomeModal({
             >
               <option value="">Không có đối tác</option>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
               {partners && partners?.map((partner) => (
                 <option key={partner.id} value={partner.id}>
                   {partner.name}

@@ -61,9 +61,12 @@ export default function ExpenseModal({
       const formData = new FormData();
       formData.append("file", file);
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
       formData.append("module", "expenses");
 >>>>>>> 1715de4 (update)
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
 
       const response = await fetch("/api/upload", {
         method: "POST",

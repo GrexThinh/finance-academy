@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
@@ -16,6 +19,7 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+<<<<<<< HEAD
 =======
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
@@ -36,11 +40,16 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
 >>>>>>> 1715de4 (update)
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
     }
 
     // Validate file type
     const allowedTypes = [
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-excel',
     ]
@@ -50,6 +59,7 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid file type. Only Excel files (.xlsx, .xls) are allowed.' },
         { status: 400 }
       )
+<<<<<<< HEAD
 =======
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/vnd.ms-excel",
@@ -64,12 +74,17 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
 >>>>>>> 1715de4 (update)
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
     }
 
     // Validate file size (max 50MB for Excel files)
     if (file.size > 50 * 1024 * 1024) {
       return NextResponse.json(
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
         { error: 'File size exceeds 50MB limit' },
         { status: 400 }
       )
@@ -78,6 +93,7 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer for processing
     const buffer = Buffer.from(await file.arrayBuffer())
     const workbook = XLSX.read(buffer, { type: 'buffer' })
+<<<<<<< HEAD
 =======
         { error: "File size exceeds 50MB limit" },
         { status: 400 }
@@ -101,12 +117,17 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const workbook = XLSX.read(buffer, { type: "buffer" });
 >>>>>>> 1715de4 (update)
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
 
     const results = {
       incomeImported: 0,
       expenseImported: 0,
       errors: [] as string[],
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
     }
 
     // Process income data from "DATA" sheet
@@ -114,6 +135,7 @@ export async function POST(request: NextRequest) {
     if (dataSheet) {
       try {
         const incomeData = XLSX.utils.sheet_to_json(dataSheet) as any[]
+<<<<<<< HEAD
 =======
     };
 
@@ -123,11 +145,16 @@ export async function POST(request: NextRequest) {
       try {
         const incomeData = XLSX.utils.sheet_to_json(dataSheet) as any[];
 >>>>>>> 1715de4 (update)
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
 
         for (const row of incomeData) {
           try {
             // Skip empty rows
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
             if (!row['THÁNG'] || !row['TRUNG TÂM'] || !row['CHƯƠNG TRINH']) {
               continue
             }
@@ -181,6 +208,7 @@ export async function POST(request: NextRequest) {
             const numberOfClasses = parseInt(row['SỐ LỚP']) || 0
             const numberOfStudents = parseInt(row['SỐ HỌC VIÊN']) || 0
             const revenue = parseFloat(row['DOANH THU']) || 0
+<<<<<<< HEAD
 =======
             if (!row["THÁNG"] || !row["TRUNG TÂM"] || !row["CHƯƠNG TRINH"]) {
               continue;
@@ -236,6 +264,8 @@ export async function POST(request: NextRequest) {
             const numberOfStudents = parseInt(row["SỐ HỌC VIÊN"]) || 0;
             const revenue = parseFloat(row["DOANH THU"]) || 0;
 >>>>>>> 1715de4 (update)
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
 
             // Create income record
             await prisma.incomeRecord.create({
@@ -248,6 +278,9 @@ export async function POST(request: NextRequest) {
                 numberOfStudents,
                 revenue,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
               }
             })
 
@@ -260,6 +293,7 @@ export async function POST(request: NextRequest) {
       } catch (sheetError) {
         console.error('Error processing DATA sheet:', sheetError)
         results.errors.push(`DATA sheet error: ${sheetError}`)
+<<<<<<< HEAD
 =======
               },
             });
@@ -274,26 +308,37 @@ export async function POST(request: NextRequest) {
         console.error("Error processing DATA sheet:", sheetError);
         results.errors.push(`DATA sheet error: ${sheetError}`);
 >>>>>>> 1715de4 (update)
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
       }
     }
 
     // Process expense data from "CHI" sheet
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
     const chiSheet = workbook.Sheets['CHI']
     if (chiSheet) {
       try {
         const expenseData = XLSX.utils.sheet_to_json(chiSheet) as any[]
+<<<<<<< HEAD
 =======
     const chiSheet = workbook.Sheets["CHI"];
     if (chiSheet) {
       try {
         const expenseData = XLSX.utils.sheet_to_json(chiSheet) as any[];
 >>>>>>> 1715de4 (update)
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
 
         for (const row of expenseData) {
           try {
             // Skip empty rows
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
             if (!row['THÁNG'] || !row['TRUNG TÂM'] || !row['KHOẢN CHI'] || !row['HẠNG MỤC']) {
               continue
             }
@@ -332,6 +377,7 @@ export async function POST(request: NextRequest) {
             const amount = parseFloat(row['THÀNH TIỀN']) || 0
             const travelAllowance = parseFloat(row['PC DI CHUYỂN']) || 0
             const total = parseFloat(row['TỔNG']) || (amount + travelAllowance)
+<<<<<<< HEAD
 =======
             if (
               !row["THÁNG"] ||
@@ -377,6 +423,8 @@ export async function POST(request: NextRequest) {
             const travelAllowance = parseFloat(row["PC DI CHUYỂN"]) || 0;
             const total = parseFloat(row["TỔNG"]) || amount + travelAllowance;
 >>>>>>> 1715de4 (update)
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
 
             // Create expense record
             await prisma.expenseRecord.create({
@@ -385,6 +433,9 @@ export async function POST(request: NextRequest) {
                 year: 2024, // Default year, can be made configurable
                 centerId: center.id,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
                 category: row['KHOẢN CHI']?.toString().trim() || '',
                 item: row['HẠNG MỤC']?.toString().trim() || '',
                 position: row['CHỨC VỤ']?.toString() || null,
@@ -425,6 +476,7 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to import Excel file' },
       { status: 500 }
     )
+<<<<<<< HEAD
 =======
                 category: row["KHOẢN CHI"]?.toString().trim() || "",
                 item: row["HẠNG MỤC"]?.toString().trim() || "",
@@ -472,5 +524,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
 >>>>>>> 1715de4 (update)
+=======
+>>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
   }
 }
