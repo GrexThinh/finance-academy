@@ -101,6 +101,7 @@ export default function IncomeModal({
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("module", "income");
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -285,11 +286,12 @@ export default function IncomeModal({
               required
             >
               <option value="">Chọn trung tâm</option>
-              {centers.map((center) => (
-                <option key={center.id} value={center.id}>
-                  {center.name}
-                </option>
-              ))}
+              {centers &&
+                centers?.map((center) => (
+                  <option key={center.id} value={center.id}>
+                    {center.name}
+                  </option>
+                ))}
             </select>
           </div>
 
@@ -322,11 +324,20 @@ export default function IncomeModal({
               className="input"
             >
               <option value="">Không có đối tác</option>
-              {partners.map((partner) => (
+<<<<<<< HEAD
+              {partners && partners?.map((partner) => (
                 <option key={partner.id} value={partner.id}>
                   {partner.name}
                 </option>
               ))}
+=======
+              {partners &&
+                partners?.map((partner) => (
+                  <option key={partner.id} value={partner.id}>
+                    {partner.name}
+                  </option>
+                ))}
+>>>>>>> 1715de4 (update)
             </select>
           </div>
 

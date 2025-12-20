@@ -1,157 +1,167 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Building2, Search, Filter } from 'lucide-react'
-import { useDragScroll } from '@/lib/use-drag-scroll'
+import { useEffect, useState } from "react";
+import { Plus, Edit, Trash2, Users, Search, Filter } from "lucide-react";
+import { useDragScroll } from "@/lib/use-drag-scroll";
 
-interface Center {
-  id: string
-  name: string
-  code: string | null
-  createdAt: string
-  updatedAt: string
+interface Partner {
+  id: string;
+  name: string;
+  code: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface CenterFormData {
-  name: string
-  code: string
+interface PartnerFormData {
+  name: string;
+  code: string;
 }
 
-export default function CentersPage() {
-  const [centers, setCenters] = useState<Center[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [editingCenter, setEditingCenter] = useState<Center | null>(null)
-  const [formData, setFormData] = useState<CenterFormData>({
-    name: '',
-    code: '',
-  })
-  const [searchTerm, setSearchTerm] = useState('')
+export default function PartnersPage() {
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
+  const [formData, setFormData] = useState<PartnerFormData>({
+    name: "",
+    code: "",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10)
-  const [totalCount, setTotalCount] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const { ref: tableRef, isDragging, handlers } = useDragScroll({ dragSpeed: 2 })
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const {
+    ref: tableRef,
+    isDragging,
+    handlers,
+  } = useDragScroll({ dragSpeed: 2 });
 
   useEffect(() => {
-    fetchCenters()
-  }, [])
+    fetchPartners();
+  }, []);
 
   useEffect(() => {
-    setCurrentPage(1) // Reset to page 1 when search term changes
-  }, [searchTerm])
+    setCurrentPage(1); // Reset to page 1 when search term changes
+  }, [searchTerm]);
 
-  const fetchCenters = async () => {
+  const fetchPartners = async () => {
     try {
-      setLoading(true)
-      // Load all centers for client-side filtering and pagination
-      const response = await fetch('/api/centers?page=1&limit=1000') // Large limit to get all
-      const result = await response.json()
-      setCenters(result.data || [])
-      setTotalCount(result.pagination?.totalCount || (result.data?.length || 0))
+      setLoading(true);
+      // Load all partners for client-side filtering and pagination
+      const response = await fetch("/api/partners?page=1&limit=1000"); // Large limit to get all
+      const result = await response.json();
+      setPartners(result.data || []);
+      setTotalCount(result.pagination?.totalCount || result.data?.length || 0);
     } catch (error) {
-      console.error('Error fetching centers:', error)
-      setCenters([])
-      setTotalCount(0)
+      console.error("Error fetching partners:", error);
+      setPartners([]);
+      setTotalCount(0);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
-      const url = editingCenter ? `/api/centers/${editingCenter.id}` : '/api/centers'
-      const method = editingCenter ? 'PUT' : 'POST'
+      const url = editingPartner
+        ? `/api/partners/${editingPartner.id}`
+        : "/api/partners";
+      const method = editingPartner ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      })
+      });
 
       if (response.ok) {
-        setShowModal(false)
-        setEditingCenter(null)
-        setFormData({ name: '', code: '' })
-        fetchCenters()
-        setCurrentPage(1) // Reset to page 1 after create/update
+        setShowModal(false);
+        setEditingPartner(null);
+        setFormData({ name: "", code: "" });
+        fetchPartners();
+        setCurrentPage(1); // Reset to page 1 after create/update
       } else {
-        const error = await response.json()
-        alert(error.error || 'Có lỗi xảy ra')
+        const error = await response.json();
+        alert(error.error || "Có lỗi xảy ra");
       }
     } catch (error) {
-      console.error('Error saving center:', error)
-      alert('Có lỗi xảy ra khi lưu trung tâm')
+      console.error("Error saving partner:", error);
+      alert("Có lỗi xảy ra khi lưu đối tác");
     }
-  }
+  };
 
-  const handleEdit = (center: Center) => {
-    setEditingCenter(center)
+  const handleEdit = (partner: Partner) => {
+    setEditingPartner(partner);
     setFormData({
-      name: center.name,
-      code: center.code || '',
-    })
-    setShowModal(true)
-  }
+      name: partner.name,
+      code: partner.code || "",
+    });
+    setShowModal(true);
+  };
 
-  const handleDelete = async (centerId: string, centerName: string) => {
-    if (!confirm(`Bạn có chắc muốn xóa trung tâm "${centerName}"?`)) return
+  const handleDelete = async (partnerId: string, partnerName: string) => {
+    if (!confirm(`Bạn có chắc muốn xóa đối tác "${partnerName}"?`)) return;
 
     try {
-      const response = await fetch(`/api/centers/${centerId}`, {
-        method: 'DELETE',
-      })
+      const response = await fetch(`/api/partners/${partnerId}`, {
+        method: "DELETE",
+      });
 
       if (response.ok) {
-        fetchCenters()
-        setCurrentPage(1) // Reset to page 1 after delete
+        fetchPartners();
+        setCurrentPage(1); // Reset to page 1 after delete
       } else {
-        const error = await response.json()
-        alert(error.error || 'Có lỗi xảy ra')
+        const error = await response.json();
+        alert(error.error || "Có lỗi xảy ra");
       }
     } catch (error) {
-      console.error('Error deleting center:', error)
-      alert('Có lỗi xảy ra khi xóa trung tâm')
+      console.error("Error deleting partner:", error);
+      alert("Có lỗi xảy ra khi xóa đối tác");
     }
-  }
+  };
 
-  const filteredCenters = centers.filter((center) => {
+  const filteredPartners = partners.filter((partner) => {
     const matchesSearch =
-      center.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (center.code && center.code.toLowerCase().includes(searchTerm.toLowerCase()))
-    return matchesSearch
-  })
+      partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (partner.code &&
+        partner.code.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesSearch;
+  });
 
   // Calculate pagination for filtered results
-  const paginatedCenters = filteredCenters.slice(
+  const paginatedPartners = filteredPartners.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
-  )
+  );
 
-  const maxPages = Math.ceil(filteredCenters.length / itemsPerPage)
+  const maxPages = Math.ceil(filteredPartners.length / itemsPerPage);
 
   const openCreateModal = () => {
-    setEditingCenter(null)
-    setFormData({ name: '', code: '' })
-    setShowModal(true)
-  }
+    setEditingPartner(null);
+    setFormData({ name: "", code: "" });
+    setShowModal(true);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý trung tâm</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý đối tác</h1>
           <p className="text-gray-600 mt-1">
-            Quản lý danh sách các trung tâm đào tạo
+            Quản lý danh sách các đối tác hợp tác
           </p>
         </div>
-        <button onClick={openCreateModal} className="btn-primary flex items-center gap-2">
+        <button
+          onClick={openCreateModal}
+          className="btn-primary flex items-center gap-2"
+        >
           <Plus className="w-4 h-4" />
-          Thêm trung tâm
+          Thêm đối tác
         </button>
       </div>
 
@@ -166,7 +176,7 @@ export default function CentersPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên hoặc mã trung tâm..."
+              placeholder="Tìm kiếm theo tên hoặc mã đối tác..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="input pl-10"
@@ -175,21 +185,23 @@ export default function CentersPage() {
         </div>
       </div>
 
-      {/* Centers Table */}
+      {/* Partners Table */}
       <div className="card overflow-hidden p-0">
         <div
           ref={tableRef}
-          className={`overflow-x-auto ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} select-none`}
+          className={`overflow-x-auto ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          } select-none`}
           {...handlers}
         >
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Tên trung tâm
+                  Tên đối tác
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Mã trung tâm
+                  Mã đối tác
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Ngày tạo
@@ -202,44 +214,52 @@ export default function CentersPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan={4}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     Đang tải...
                   </td>
                 </tr>
-              ) : paginatedCenters.length === 0 ? (
+              ) : paginatedPartners.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                    {filteredCenters.length === 0 ? 'Chưa có trung tâm nào' : 'Không có kết quả phù hợp'}
+                  <td
+                    colSpan={4}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
+                    {filteredPartners.length === 0
+                      ? "Chưa có đối tác nào"
+                      : "Không có kết quả phù hợp"}
                   </td>
                 </tr>
               ) : (
-                paginatedCenters.map((center) => (
-                  <tr key={center.id} className="hover:bg-gray-50">
+                paginatedPartners?.map((partner) => (
+                  <tr key={partner.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <Building2 className="w-5 h-5 text-gray-400" />
+                        <Users className="w-5 h-5 text-gray-400" />
                         <span className="text-sm font-medium text-gray-900">
-                          {center.name}
+                          {partner.name}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {center.code || '-'}
+                      {partner.code || "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(center.createdAt).toLocaleDateString('vi-VN')}
+                      {new Date(partner.createdAt).toLocaleDateString("vi-VN")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleEdit(center)}
+                          onClick={() => handleEdit(partner)}
                           className="text-primary-600 hover:text-primary-900"
                           title="Chỉnh sửa"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(center.id, center.name)}
+                          onClick={() => handleDelete(partner.id, partner.name)}
                           className="text-danger-600 hover:text-danger-900"
                           title="Xóa"
                         >
@@ -260,7 +280,8 @@ export default function CentersPage() {
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <span>
                 Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                {Math.min(currentPage * itemsPerPage, filteredCenters.length)} của {filteredCenters.length} kết quả
+                {Math.min(currentPage * itemsPerPage, filteredPartners.length)}{" "}
+                của {filteredPartners.length} kết quả
               </span>
             </div>
 
@@ -313,31 +334,35 @@ export default function CentersPage() {
         )}
       </div>
 
-      {/* Center Modal */}
+      {/* Partner Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                {editingCenter ? 'Chỉnh sửa trung tâm' : 'Thêm trung tâm mới'}
+                {editingPartner ? "Chỉnh sửa đối tác" : "Thêm đối tác mới"}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="label">Tên trung tâm</label>
+                  <label className="label">Tên đối tác</label>
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     className="input"
                     required
                   />
                 </div>
                 <div>
-                  <label className="label">Mã trung tâm (tùy chọn)</label>
+                  <label className="label">Mã đối tác (tùy chọn)</label>
                   <input
                     type="text"
                     value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, code: e.target.value })
+                    }
                     className="input"
                   />
                 </div>
@@ -350,7 +375,7 @@ export default function CentersPage() {
                     Hủy
                   </button>
                   <button type="submit" className="btn-primary">
-                    {editingCenter ? 'Cập nhật' : 'Thêm mới'}
+                    {editingPartner ? "Cập nhật" : "Thêm mới"}
                   </button>
                 </div>
               </form>
@@ -359,5 +384,5 @@ export default function CentersPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

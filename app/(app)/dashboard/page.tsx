@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -10,6 +10,7 @@ import {
   Building2,
   Download,
   FileSpreadsheet,
+  Upload,
 } from "lucide-react";
 import {
   BarChart,
@@ -29,6 +30,8 @@ import {
   Area,
 } from "recharts";
 import { formatCurrency, getMonthName } from "@/lib/utils";
+import StatisticsDashboardTab from "../statistics/dashboard-tab";
+import ExcelImportModal from "@/components/modals/excel-import-modal";
 
 // Chart colors
 const COLORS = [
@@ -40,6 +43,38 @@ const COLORS = [
   "#82CA9D",
 ];
 const PROFIT_COLORS = ["#22c55e", "#ef4444", "#f97316", "#eab308", "#8b5cf6"];
+
+function downloadSvgChart(container: HTMLDivElement | null, filename: string) {
+  if (!container) return;
+  const svg = container.querySelector("svg");
+  if (!svg) return;
+
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svg);
+  const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+  const url = window.URL.createObjectURL(blob);
+  const image = new Image();
+
+  image.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(image, 0, 0);
+    window.URL.revokeObjectURL(url);
+
+    const imgURI = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = imgURI;
+    a.download = `${filename}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  image.src = url;
+}
 
 interface DashboardData {
   summary: {
@@ -80,6 +115,12 @@ export default function DashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  const revenueVsExpenseRef = useRef<HTMLDivElement | null>(null);
+  const monthlyTrendRef = useRef<HTMLDivElement | null>(null);
+  const expenseCategoriesRef = useRef<HTMLDivElement | null>(null);
+  const yearlyComparisonRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (status === "loading") return; // Still loading
@@ -205,27 +246,11 @@ export default function DashboardPage() {
       name: `${getMonthName(item.month)} ${item.year}`,
       "Doanh thu": item.revenue,
       "Chi phí": item.expenses,
+      "Lợi nhuận": item.revenue - item.expenses,
     })) || [];
 
   return (
     <div className="space-y-8">
-      {/* Debug Info */}
-      {/* <div className="card bg-yellow-50 border-yellow-200">
-        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Debug Info</h3>
-        <p className="text-sm text-yellow-700">
-          Session Status: {status}
-        </p>
-        <p className="text-sm text-yellow-700">
-          User: {session?.user?.name} ({session?.user?.username})
-        </p>
-        <p className="text-sm text-yellow-700">
-          Role: {(session?.user as any)?.role}
-        </p>
-        <p className="text-sm text-yellow-700">
-          Is Admin: {((session?.user as any)?.role === "ADMIN").toString()}
-        </p>
-      </div> */}
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
@@ -243,6 +268,22 @@ export default function DashboardPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Import Options */}
+      <div className="card">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Tải dữ liệu từ Excel
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            Tải lên Excel
+          </button>
+        </div>
       </div>
 
       {/* Export Options */}
@@ -279,20 +320,40 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue vs Expenses Chart */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Doanh thu vs Chi phí (12 tháng gần nhất)
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-              <YAxis />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Legend />
-              <Bar dataKey="Doanh thu" fill="#22c55e" />
-              <Bar dataKey="Chi phí" fill="#ef4444" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Doanh thu vs Chi phí (12 tháng gần nhất)
+            </h3>
+            <button
+              onClick={() =>
+                downloadSvgChart(
+                  revenueVsExpenseRef.current,
+                  "doanh-thu-chi-phi"
+                )
+              }
+              className="text-xs text-primary-600 hover:text-primary-700"
+            >
+              Tải ảnh
+            </button>
+          </div>
+          <div ref={revenueVsExpenseRef} className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="name"
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Legend />
+                <Bar dataKey="Doanh thu" fill="#22c55e" />
+                <Bar dataKey="Chi phí" fill="#ef4444" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Top Centers */}
@@ -324,66 +385,102 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Monthly Trend Line Chart */}
+      {/* Monthly Trend Line Chart with profit */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Xu hướng theo tháng
-        </h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={monthlyChartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-            <YAxis />
-            <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="Doanh thu"
-              stroke="#22c55e"
-              strokeWidth={2}
-            />
-            <Line
-              type="monotone"
-              dataKey="Chi phí"
-              stroke="#ef4444"
-              strokeWidth={2}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Xu hướng doanh thu, chi phí và lợi nhuận theo tháng
+          </h3>
+          <button
+            onClick={() =>
+              downloadSvgChart(monthlyTrendRef.current, "xu-huong-theo-thang")
+            }
+            className="text-xs text-primary-600 hover:text-primary-700"
+          >
+            Tải ảnh
+          </button>
+        </div>
+        <div ref={monthlyTrendRef} className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={monthlyChartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+              <YAxis />
+              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="Doanh thu"
+                stroke="#22c55e"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="Chi phí"
+                stroke="#ef4444"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="Lợi nhuận"
+                stroke="#0ea5e9"
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Additional Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Expense Categories Pie Chart */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Chi phí theo danh mục
-          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Chi phí theo danh mục
+            </h3>
+            <button
+              onClick={() =>
+                downloadSvgChart(
+                  expenseCategoriesRef.current,
+                  "chi-phi-danh-muc"
+                )
+              }
+              className="text-xs text-primary-600 hover:text-primary-700"
+            >
+              Tải ảnh
+            </button>
+          </div>
           {data.expenseCategories && data.expenseCategories.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={data.expenseCategories}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ categoryName, percent }) =>
-                    `${categoryName} ${(percent * 100).toFixed(0)}%`
-                  }
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="amount"
-                >
-                  {data.expenseCategories.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div ref={expenseCategoriesRef} className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data.expenseCategories}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ categoryName, percent }) =>
+                      `${categoryName} ${(percent * 100).toFixed(0)}%`
+                    }
+                    outerRadius={90}
+                    fill="#8884d8"
+                    dataKey="amount"
+                  >
+                    {data.expenseCategories.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => formatCurrency(Number(value))}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
             <div className="flex items-center justify-center h-64">
               <div className="text-gray-500">Không có dữ liệu</div>
@@ -436,37 +533,63 @@ export default function DashboardPage() {
 
         {/* Yearly Comparison Area Chart */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            So sánh theo năm
-          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-gray-900">
+              So sánh theo năm
+            </h3>
+            <button
+              onClick={() =>
+                downloadSvgChart(
+                  yearlyComparisonRef.current,
+                  "so-sanh-theo-nam"
+                )
+              }
+              className="text-xs text-primary-600 hover:text-primary-700"
+            >
+              Tải ảnh
+            </button>
+          </div>
           {data.yearlyComparison && data.yearlyComparison.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={data.yearlyComparison}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stackId="1"
-                  stroke="#22c55e"
-                  fill="#22c55e"
-                  fillOpacity={0.6}
-                  name="Doanh thu"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="expenses"
-                  stackId="2"
-                  stroke="#ef4444"
-                  fill="#ef4444"
-                  fillOpacity={0.6}
-                  name="Chi phí"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div ref={yearlyComparisonRef} className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data.yearlyComparison}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="year" />
+                  <YAxis />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(Number(value))}
+                  />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stackId="1"
+                    stroke="#22c55e"
+                    fill="#22c55e"
+                    fillOpacity={0.6}
+                    name="Doanh thu"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="expenses"
+                    stackId="2"
+                    stroke="#ef4444"
+                    fill="#ef4444"
+                    fillOpacity={0.6}
+                    name="Chi phí"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="profit"
+                    stackId="3"
+                    stroke="#0ea5e9"
+                    fill="#0ea5e9"
+                    fillOpacity={0.4}
+                    name="Lợi nhuận"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
             <div className="flex items-center justify-center h-64">
               <div className="text-gray-500">Không có dữ liệu</div>
@@ -474,6 +597,19 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Detailed income dashboard (moved from statistics tab) */}
+      <StatisticsDashboardTab />
+
+      {/* Excel Import Modal */}
+      <ExcelImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={() => {
+          fetchDashboardData(); // Refresh dashboard data after import
+        }}
+      />
     </div>
   );
 }
+

@@ -1,104 +1,121 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { X, Upload } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { X, Upload } from "lucide-react";
 
 interface ExpenseModalProps {
-  record: any | null
-  onClose: () => void
-  onSuccess: () => void
+  record: any | null;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
-export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModalProps) {
-  const [centers, setCenters] = useState<any[]>([])
-  const [uploading, setUploading] = useState(false)
+export default function ExpenseModal({
+  record,
+  onClose,
+  onSuccess,
+}: ExpenseModalProps) {
+  const [centers, setCenters] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     month: record?.month || new Date().getMonth() + 1,
     year: record?.year || new Date().getFullYear(),
-    centerId: record?.center?.id || '',
-    category: record?.category?.name || '',
-    item: record?.item?.name || '',
-    position: record?.position || '',
-    contractType: record?.contractType || '',
-    hours: record?.hours || '',
-    unitPrice: record?.unitPrice || '',
-    amount: record?.amount || '',
-    kilometers: record?.kilometers || '',
-    travelAllowance: record?.travelAllowance || '',
-    responsible: record?.responsible || '',
-    status: record?.status || '',
-    total: record?.total || '',
-    notes: record?.notes || '',
-    uploadedFileUrl: record?.uploadedFileUrl || '',
-  })
+    centerId: record?.center?.id || "",
+    category: record?.category?.name || "",
+    item: record?.item?.name || "",
+    position: record?.position || "",
+    contractType: record?.contractType || "",
+    hours: record?.hours || "",
+    unitPrice: record?.unitPrice || "",
+    amount: record?.amount || "",
+    kilometers: record?.kilometers || "",
+    travelAllowance: record?.travelAllowance || "",
+    responsible: record?.responsible || "",
+    status: record?.status || "",
+    total: record?.total || "",
+    notes: record?.notes || "",
+    uploadedFileUrl: record?.uploadedFileUrl || "",
+  });
 
   useEffect(() => {
-    fetchCenters()
-  }, [])
+    fetchCenters();
+  }, []);
 
   const fetchCenters = async () => {
-    const response = await fetch('/api/centers')
-    const data = await response.json()
-    setCenters(data)
-  }
+    const response = await fetch("/api/centers");
+    const data = await response.json();
+    // API returns shape { data: Center[], pagination: ... }
+    const centersArray = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : [];
+    setCenters(centersArray);
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    setUploading(true)
+    setUploading(true);
     try {
-      const formData = new FormData()
-      formData.append('file', file)
+      const formData = new FormData();
+      formData.append("file", file);
+<<<<<<< HEAD
+=======
+      formData.append("module", "expenses");
+>>>>>>> 1715de4 (update)
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
+      const response = await fetch("/api/upload", {
+        method: "POST",
         body: formData,
-      })
+      });
 
-      const data = await response.json()
-      setFormData((prev) => ({ ...prev, uploadedFileUrl: data.url }))
+      const data = await response.json();
+      setFormData((prev) => ({ ...prev, uploadedFileUrl: data.url }));
     } catch (error) {
-      console.error('Error uploading file:', error)
-      alert('Lỗi khi tải file lên')
+      console.error("Error uploading file:", error);
+      alert("Lỗi khi tải file lên");
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
-      const url = '/api/expenses'
-      const method = record ? 'PUT' : 'POST'
-      const body = record ? { id: record.id, ...formData } : formData
+      const url = "/api/expenses";
+      const method = record ? "PUT" : "POST";
+      const body = record ? { id: record.id, ...formData } : formData;
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-      })
+      });
 
       if (response.ok) {
-        onSuccess()
+        onSuccess();
       } else {
-        alert('Có lỗi xảy ra')
+        alert("Có lỗi xảy ra");
       }
     } catch (error) {
-      console.error('Error saving record:', error)
-      alert('Có lỗi xảy ra')
+      console.error("Error saving record:", error);
+      alert("Có lỗi xảy ra");
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">
-            {record ? 'Sửa chi phí' : 'Thêm chi phí mới'}
+            {record ? "Sửa chi phí" : "Thêm chi phí mới"}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -141,16 +158,19 @@ export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModa
             <label className="label">Trung tâm</label>
             <select
               value={formData.centerId}
-              onChange={(e) => setFormData({ ...formData, centerId: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, centerId: e.target.value })
+              }
               className="input"
               required
             >
               <option value="">Chọn trung tâm</option>
-              {centers.map((center) => (
-                <option key={center.id} value={center.id}>
-                  {center.name}
-                </option>
-              ))}
+              {centers &&
+                centers.map((center) => (
+                  <option key={center.id} value={center.id}>
+                    {center.name}
+                  </option>
+                ))}
             </select>
           </div>
 
@@ -174,7 +194,9 @@ export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModa
               <input
                 type="text"
                 value={formData.item}
-                onChange={(e) => setFormData({ ...formData, item: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, item: e.target.value })
+                }
                 className="input"
                 placeholder="Nhập hạng mục"
                 required
@@ -188,7 +210,9 @@ export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModa
               <input
                 type="text"
                 value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, position: e.target.value })
+                }
                 className="input"
               />
             </div>
@@ -212,7 +236,9 @@ export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModa
               <input
                 type="number"
                 value={formData.hours}
-                onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, hours: e.target.value })
+                }
                 className="input"
                 step="0.01"
               />
@@ -237,7 +263,9 @@ export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModa
             <input
               type="number"
               value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, amount: e.target.value })
+              }
               className="input"
               required
               step="1000"
@@ -289,7 +317,9 @@ export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModa
             <input
               type="text"
               value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, status: e.target.value })
+              }
               className="input"
               placeholder="Ví dụ: Đã chi, Chưa chi"
             />
@@ -300,7 +330,9 @@ export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModa
             <input
               type="number"
               value={formData.total}
-              onChange={(e) => setFormData({ ...formData, total: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, total: e.target.value })
+              }
               className="input"
               required
               step="1000"
@@ -311,7 +343,9 @@ export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModa
             <label className="label">Ghi chú</label>
             <textarea
               value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
               className="input"
               rows={3}
             />
@@ -332,7 +366,7 @@ export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModa
                 className="btn-secondary cursor-pointer inline-flex items-center gap-2"
               >
                 <Upload className="w-4 h-4" />
-                {uploading ? 'Đang tải...' : 'Chọn file'}
+                {uploading ? "Đang tải..." : "Chọn file"}
               </label>
               {formData.uploadedFileUrl && (
                 <p className="text-sm text-success-600 mt-2">
@@ -347,11 +381,11 @@ export default function ExpenseModal({ record, onClose, onSuccess }: ExpenseModa
               Hủy
             </button>
             <button type="submit" className="btn-primary">
-              {record ? 'Cập nhật' : 'Thêm mới'}
+              {record ? "Cập nhật" : "Thêm mới"}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }

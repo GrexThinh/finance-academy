@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Users, Search, Filter } from 'lucide-react'
+import { Plus, Edit, Trash2, BookOpen, Search, Filter } from 'lucide-react'
 import { useDragScroll } from '@/lib/use-drag-scroll'
 
-interface Partner {
+interface Program {
   id: string
   name: string
   code: string | null
@@ -12,17 +12,17 @@ interface Partner {
   updatedAt: string
 }
 
-interface PartnerFormData {
+interface ProgramFormData {
   name: string
   code: string
 }
 
-export default function PartnersPage() {
-  const [partners, setPartners] = useState<Partner[]>([])
+export default function ProgramsPage() {
+  const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [editingPartner, setEditingPartner] = useState<Partner | null>(null)
-  const [formData, setFormData] = useState<PartnerFormData>({
+  const [editingProgram, setEditingProgram] = useState<Program | null>(null)
+  const [formData, setFormData] = useState<ProgramFormData>({
     name: '',
     code: '',
   })
@@ -36,24 +36,24 @@ export default function PartnersPage() {
   const { ref: tableRef, isDragging, handlers } = useDragScroll({ dragSpeed: 2 })
 
   useEffect(() => {
-    fetchPartners()
+    fetchPrograms()
   }, [])
 
   useEffect(() => {
     setCurrentPage(1) // Reset to page 1 when search term changes
   }, [searchTerm])
 
-  const fetchPartners = async () => {
+  const fetchPrograms = async () => {
     try {
       setLoading(true)
-      // Load all partners for client-side filtering and pagination
-      const response = await fetch('/api/partners?page=1&limit=1000') // Large limit to get all
+      // Load all programs for client-side filtering and pagination
+      const response = await fetch('/api/programs?page=1&limit=1000') // Large limit to get all
       const result = await response.json()
-      setPartners(result.data || [])
+      setPrograms(result.data || [])
       setTotalCount(result.pagination?.totalCount || (result.data?.length || 0))
     } catch (error) {
-      console.error('Error fetching partners:', error)
-      setPartners([])
+      console.error('Error fetching programs:', error)
+      setPrograms([])
       setTotalCount(0)
     } finally {
       setLoading(false)
@@ -64,8 +64,8 @@ export default function PartnersPage() {
     e.preventDefault()
 
     try {
-      const url = editingPartner ? `/api/partners/${editingPartner.id}` : '/api/partners'
-      const method = editingPartner ? 'PUT' : 'POST'
+      const url = editingProgram ? `/api/programs/${editingProgram.id}` : '/api/programs'
+      const method = editingProgram ? 'PUT' : 'POST'
 
       const response = await fetch(url, {
         method,
@@ -75,67 +75,67 @@ export default function PartnersPage() {
 
       if (response.ok) {
         setShowModal(false)
-        setEditingPartner(null)
+        setEditingProgram(null)
         setFormData({ name: '', code: '' })
-        fetchPartners()
+        fetchPrograms()
         setCurrentPage(1) // Reset to page 1 after create/update
       } else {
         const error = await response.json()
         alert(error.error || 'Có lỗi xảy ra')
       }
     } catch (error) {
-      console.error('Error saving partner:', error)
-      alert('Có lỗi xảy ra khi lưu đối tác')
+      console.error('Error saving program:', error)
+      alert('Có lỗi xảy ra khi lưu chương trình')
     }
   }
 
-  const handleEdit = (partner: Partner) => {
-    setEditingPartner(partner)
+  const handleEdit = (program: Program) => {
+    setEditingProgram(program)
     setFormData({
-      name: partner.name,
-      code: partner.code || '',
+      name: program.name,
+      code: program.code || '',
     })
     setShowModal(true)
   }
 
-  const handleDelete = async (partnerId: string, partnerName: string) => {
-    if (!confirm(`Bạn có chắc muốn xóa đối tác "${partnerName}"?`)) return
+  const handleDelete = async (programId: string, programName: string) => {
+    if (!confirm(`Bạn có chắc muốn xóa chương trình "${programName}"?`)) return
 
     try {
-      const response = await fetch(`/api/partners/${partnerId}`, {
+      const response = await fetch(`/api/programs/${programId}`, {
         method: 'DELETE',
       })
 
       if (response.ok) {
-        fetchPartners()
+        fetchPrograms()
         setCurrentPage(1) // Reset to page 1 after delete
       } else {
         const error = await response.json()
         alert(error.error || 'Có lỗi xảy ra')
       }
     } catch (error) {
-      console.error('Error deleting partner:', error)
-      alert('Có lỗi xảy ra khi xóa đối tác')
+      console.error('Error deleting program:', error)
+      alert('Có lỗi xảy ra khi xóa chương trình')
     }
   }
 
-  const filteredPartners = partners.filter((partner) => {
+  const filteredPrograms = programs.filter((program) => {
     const matchesSearch =
-      partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (partner.code && partner.code.toLowerCase().includes(searchTerm.toLowerCase()))
+      program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (program.code && program.code.toLowerCase().includes(searchTerm.toLowerCase()))
     return matchesSearch
   })
 
   // Calculate pagination for filtered results
-  const paginatedPartners = filteredPartners.slice(
+  const paginatedPrograms = filteredPrograms.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   )
 
-  const maxPages = Math.ceil(filteredPartners.length / itemsPerPage)
+  const maxPages = Math.ceil(filteredPrograms.length / itemsPerPage)
 
   const openCreateModal = () => {
-    setEditingPartner(null)
+    setEditingProgram(null)
     setFormData({ name: '', code: '' })
     setShowModal(true)
   }
@@ -144,14 +144,14 @@ export default function PartnersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý đối tác</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý chương trình</h1>
           <p className="text-gray-600 mt-1">
-            Quản lý danh sách các đối tác hợp tác
+            Quản lý danh sách các chương trình đào tạo
           </p>
         </div>
         <button onClick={openCreateModal} className="btn-primary flex items-center gap-2">
           <Plus className="w-4 h-4" />
-          Thêm đối tác
+          Thêm chương trình
         </button>
       </div>
 
@@ -166,7 +166,7 @@ export default function PartnersPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên hoặc mã đối tác..."
+              placeholder="Tìm kiếm theo tên hoặc mã chương trình..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="input pl-10"
@@ -175,7 +175,7 @@ export default function PartnersPage() {
         </div>
       </div>
 
-      {/* Partners Table */}
+      {/* Programs Table */}
       <div className="card overflow-hidden p-0">
         <div
           ref={tableRef}
@@ -186,10 +186,10 @@ export default function PartnersPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Tên đối tác
+                  Tên chương trình
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Mã đối tác
+                  Mã chương trình
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Ngày tạo
@@ -206,40 +206,40 @@ export default function PartnersPage() {
                     Đang tải...
                   </td>
                 </tr>
-              ) : paginatedPartners.length === 0 ? (
+              ) : paginatedPrograms.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                    {filteredPartners.length === 0 ? 'Chưa có đối tác nào' : 'Không có kết quả phù hợp'}
+                    {filteredPrograms.length === 0 ? 'Chưa có chương trình nào' : 'Không có kết quả phù hợp'}
                   </td>
                 </tr>
               ) : (
-                paginatedPartners.map((partner) => (
-                  <tr key={partner.id} className="hover:bg-gray-50">
+                paginatedPrograms.map((program) => (
+                  <tr key={program.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <Users className="w-5 h-5 text-gray-400" />
+                        <BookOpen className="w-5 h-5 text-gray-400" />
                         <span className="text-sm font-medium text-gray-900">
-                          {partner.name}
+                          {program.name}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {partner.code || '-'}
+                      {program.code || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(partner.createdAt).toLocaleDateString('vi-VN')}
+                      {new Date(program.createdAt).toLocaleDateString('vi-VN')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleEdit(partner)}
+                          onClick={() => handleEdit(program)}
                           className="text-primary-600 hover:text-primary-900"
                           title="Chỉnh sửa"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(partner.id, partner.name)}
+                          onClick={() => handleDelete(program.id, program.name)}
                           className="text-danger-600 hover:text-danger-900"
                           title="Xóa"
                         >
@@ -260,7 +260,7 @@ export default function PartnersPage() {
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <span>
                 Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                {Math.min(currentPage * itemsPerPage, filteredPartners.length)} của {filteredPartners.length} kết quả
+                {Math.min(currentPage * itemsPerPage, filteredPrograms.length)} của {filteredPrograms.length} kết quả
               </span>
             </div>
 
@@ -313,17 +313,17 @@ export default function PartnersPage() {
         )}
       </div>
 
-      {/* Partner Modal */}
+      {/* Program Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                {editingPartner ? 'Chỉnh sửa đối tác' : 'Thêm đối tác mới'}
+                {editingProgram ? 'Chỉnh sửa chương trình' : 'Thêm chương trình mới'}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="label">Tên đối tác</label>
+                  <label className="label">Tên chương trình</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -333,7 +333,7 @@ export default function PartnersPage() {
                   />
                 </div>
                 <div>
-                  <label className="label">Mã đối tác (tùy chọn)</label>
+                  <label className="label">Mã chương trình (tùy chọn)</label>
                   <input
                     type="text"
                     value={formData.code}
@@ -350,7 +350,7 @@ export default function PartnersPage() {
                     Hủy
                   </button>
                   <button type="submit" className="btn-primary">
-                    {editingPartner ? 'Cập nhật' : 'Thêm mới'}
+                    {editingProgram ? 'Cập nhật' : 'Thêm mới'}
                   </button>
                 </div>
               </form>
@@ -361,3 +361,4 @@ export default function PartnersPage() {
     </div>
   )
 }
+

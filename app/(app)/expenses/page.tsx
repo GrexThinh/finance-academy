@@ -3,71 +3,47 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Plus, Download, Search, Filter } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { formatCurrency, getMonthName } from "@/lib/utils";
 import { useDragScroll } from "@/lib/use-drag-scroll";
-import IncomeModal from "@/components/modals/income-modal";
+import ExpenseModal from "@/components/modals/expense-modal";
 
-interface IncomeRecord {
+interface ExpenseRecord {
   id: string;
   month: number;
   year: number;
   center: { id: string; name: string };
-  program: { id: string; name: string };
-  partner?: { id: string; name: string } | null;
-  numberOfClasses: number;
-  numberOfStudents: number;
-  revenue: string;
+  category: string;
+  item: string;
+  position?: string;
+  contractType?: string;
+  hours?: string;
+  unitPrice?: string;
+  amount: string;
+  kilometers?: string;
+  travelAllowance?: string;
+  responsible?: string;
   status?: string;
+  total: string;
   notes?: string;
-  uploadedFileUrl?: string;
-
-  // New spreadsheet fields
-  tuitionFeeFullYear?: string;
-  tuitionFeeHalfYear?: string;
-  tuitionFeeDiscount?: string;
-  tuitionFeeOld?: string;
-  sessionCount?: number;
-  sessionCountNew?: number;
-  numClassesHalfFee?: number;
-  numClassesFullFee?: number;
-  numStudentsHalfFee?: number;
-  numStudentsFullFee?: number;
-  numDiscountedStudents?: number;
-  discount?: string;
-  payType?: string;
-  oldStudent?: string;
-  freeStudentCount?: number;
-  totalTuitionFee?: string;
-  facilitiesFee?: string;
-  adminDeduction?: string;
-  agentCommission?: string;
-  teacherDeduction?: string;
-  totalDeduction?: string;
-  actualReceivable?: string;
-  submittedToCenter?: string;
-  collectionDate?: string | null;
-  difference?: string;
-  selfEnrollCount?: number;
-  retentionRate?: string;
-  staffInvolved?: string;
-  hrRetention?: string;
-  hrContract?: string;
-  schoolDeductionMethod?: string;
-  centerDeductionMethod?: string;
-  contractStatus?: string;
-  teacherRate?: string;
 }
 
-export default function IncomePage() {
+export default function ExpensesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [records, setRecords] = useState<IncomeRecord[]>([]);
+  const [records, setRecords] = useState<ExpenseRecord[]>([]);
+  const [centers, setCenters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<IncomeRecord | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [editingRecord, setEditingRecord] = useState<ExpenseRecord | null>(
+    null
+  );
+
+  // Filter state
   const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [selectedCenter, setSelectedCenter] = useState<string>("");
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,13 +65,8 @@ export default function IncomePage() {
     }
 
     fetchRecords(1); // Reset to page 1 when component mounts
+    fetchCenters();
   }, [status, session, router]);
-
-  useEffect(() => {
-    if (status === "authenticated" && session) {
-      fetchRecords(1); // Reset to page 1 when year filter changes
-    }
-  }, [selectedYear]);
 
   const fetchRecords = async (page = currentPage) => {
     try {
@@ -105,9 +76,7 @@ export default function IncomePage() {
         limit: itemsPerPage.toString(),
       });
 
-      if (selectedYear) params.append("year", selectedYear);
-
-      const response = await fetch(`/api/income?${params}`);
+      const response = await fetch(`/api/expenses?${params}`);
       if (response.ok) {
         const result = await response.json();
         setRecords(Array.isArray(result.data) ? result.data : []);
@@ -121,7 +90,7 @@ export default function IncomePage() {
         setTotalPages(0);
       }
     } catch (error) {
-      console.error("Error fetching income records:", error);
+      console.error("Error fetching expense records:", error);
       setRecords([]);
       setTotalCount(0);
       setTotalPages(0);
@@ -130,9 +99,25 @@ export default function IncomePage() {
     }
   };
 
+  const fetchCenters = async () => {
+    try {
+      const response = await fetch("/api/centers");
+      if (response.ok) {
+        const data = await response.json();
+        setCenters(Array.isArray(data) ? data : []);
+      } else {
+        console.error("API error:", response.status, response.statusText);
+        setCenters([]);
+      }
+    } catch (error) {
+      console.error("Error fetching centers:", error);
+      setCenters([]);
+    }
+  };
+
   const handleExport = async () => {
     try {
-      const params = new URLSearchParams({ type: "income" });
+      const params = new URLSearchParams({ type: "expense" });
       if (selectedYear) params.append("year", selectedYear);
 
       const response = await fetch(`/api/export?${params}`);
@@ -140,7 +125,7 @@ export default function IncomePage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `thu-nhap-${Date.now()}.xlsx`;
+      a.download = `chi-phi-${Date.now()}.xlsx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -154,31 +139,35 @@ export default function IncomePage() {
     if (!confirm("Bạn có chắc chắn muốn xóa bản ghi này?")) return;
 
     try {
-      await fetch(`/api/income?id=${id}`, { method: "DELETE" });
+      await fetch(`/api/expenses?id=${id}`, { method: "DELETE" });
       // If we're on a page that will be empty after deletion, go to previous page
       const newTotalCount = totalCount - 1;
       const newTotalPages = Math.ceil(newTotalCount / itemsPerPage);
-      const pageToFetch = currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage;
+      const pageToFetch =
+        currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage;
       fetchRecords(pageToFetch);
     } catch (error) {
       console.error("Error deleting record:", error);
     }
   };
 
-  // Records are now filtered server-side, so we use them directly
-
-  const years = Array.from(new Set(records.map((r) => r.year))).sort(
-    (a, b) => b - a
+  // Calculate totals from current page data
+  const totals = records.reduce(
+    (acc, record) => ({
+      amount: acc.amount + parseFloat(record.amount),
+      total: acc.total + parseFloat(record.total),
+      count: acc.count + 1,
+    }),
+    { amount: 0, total: 0, count: 0 }
   );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý thu nhập</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý chi phí</h1>
           <p className="text-gray-600 mt-1">
-            Theo dõi và quản lý doanh thu từ các trung tâm
+            Theo dõi và quản lý chi phí từ các trung tâm
           </p>
         </div>
         <div className="flex gap-3">
@@ -202,72 +191,84 @@ export default function IncomePage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="card">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm theo trung tâm hoặc chương trình..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input pl-10"
-              />
+      {/* Summary Totals */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Tổng số bản ghi
+              </p>
+              <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
             </div>
           </div>
-          <div className="w-full sm:w-48">
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="input"
-            >
-              <option value="">Tất cả năm</option>
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
+        </div>
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Tổng số tiền</p>
+              <p className="text-2xl font-bold text-success-600">
+                {formatCurrency(totals.amount.toString())}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Tổng chi phí</p>
+              <p className="text-2xl font-bold text-danger-600">
+                {formatCurrency(totals.total.toString())}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Trung bình/bản ghi
+              </p>
+              <p className="text-2xl font-bold text-primary-600">
+                {totals.count > 0
+                  ? formatCurrency((totals.total / totals.count).toString())
+                  : formatCurrency("0")}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Table */}
       <div className="card overflow-hidden p-0">
         <div
           ref={tableRef}
-          className={`overflow-x-auto ${
+          className={`overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 ${
             isDragging ? "cursor-grabbing" : "cursor-grab"
           } select-none`}
           {...handlers}
         >
-          <table className="w-full">
+          <table className="w-full min-w-[800px] text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                   Thời gian
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                   Trung tâm
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Chương trình
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  Khoản chi
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đối tác
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  Hạng mục
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Số lớp
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  Số tiền
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Học viên
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  Tổng
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Doanh thu
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                   Hành động
                 </th>
               </tr>
@@ -276,8 +277,8 @@ export default function IncomePage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={8}
-                    className="px-6 py-4 text-center text-gray-500"
+                    colSpan={7}
+                    className="px-3 py-2 text-center text-gray-500"
                   >
                     Đang tải...
                   </td>
@@ -285,8 +286,8 @@ export default function IncomePage() {
               ) : records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
-                    className="px-6 py-4 text-center text-gray-500"
+                    colSpan={7}
+                    className="px-3 py-2 text-center text-gray-500"
                   >
                     Không có dữ liệu
                   </td>
@@ -294,28 +295,25 @@ export default function IncomePage() {
               ) : (
                 records.map((record) => (
                   <tr key={record.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                       {getMonthName(record.month)} {record.year}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.center?.name || "N/A"}
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                      {record.center.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.program?.name || "N/A"}
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                      {record.category}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.partner?.name || "-"}
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                      {record.item}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.numberOfClasses}
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                      {formatCurrency(record.amount)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.numberOfStudents}
+                    <td className="px-3 py-2 whitespace-nowrap text-sm font-semibold text-danger-600">
+                      {formatCurrency(record.total)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-success-600">
-                      {formatCurrency(record.revenue)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
@@ -343,11 +341,12 @@ export default function IncomePage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
+          <div className="flex items-center justify-between px-3 py-3 bg-white border-t border-gray-200">
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <span>
                 Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                {Math.min(currentPage * itemsPerPage, totalCount)} của {totalCount} kết quả
+                {Math.min(currentPage * itemsPerPage, totalCount)} của{" "}
+                {totalCount} kết quả
               </span>
             </div>
 
@@ -400,9 +399,8 @@ export default function IncomePage() {
         )}
       </div>
 
-      {/* Modal */}
       {modalOpen && (
-        <IncomeModal
+        <ExpenseModal
           record={editingRecord}
           onClose={() => {
             setModalOpen(false);
@@ -418,3 +416,4 @@ export default function IncomePage() {
     </div>
   );
 }
+
