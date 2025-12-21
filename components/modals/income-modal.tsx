@@ -22,51 +22,16 @@ export default function IncomeModal({
     month: record?.month || new Date().getMonth() + 1,
     year: record?.year || new Date().getFullYear(),
     centerId: record?.center?.id || "",
-    programId: record?.program?.id || "",
     partnerId: record?.partner?.id || "",
     numberOfClasses: record?.numberOfClasses || 0,
     numberOfStudents: record?.numberOfStudents || 0,
-    revenue: record?.revenue || "",
+    totalTuitionFee: record?.totalTuitionFee || "",
+    agentCommission: record?.agentCommission || "",
+    totalDeduction: record?.totalDeduction || "",
+    actualReceivable: record?.actualReceivable || "",
     status: record?.status || "",
     notes: record?.notes || "",
     uploadedFileUrl: record?.uploadedFileUrl || "",
-    // New spreadsheet fields
-    tuitionFeeFullYear: record?.tuitionFeeFullYear || "",
-    tuitionFeeHalfYear: record?.tuitionFeeHalfYear || "",
-    tuitionFeeDiscount: record?.tuitionFeeDiscount || "",
-    tuitionFeeOld: record?.tuitionFeeOld || "",
-    sessionCount: record?.sessionCount || "",
-    sessionCountNew: record?.sessionCountNew || "",
-    numClassesHalfFee: record?.numClassesHalfFee || "",
-    numClassesFullFee: record?.numClassesFullFee || "",
-    numStudentsHalfFee: record?.numStudentsHalfFee || "",
-    numStudentsFullFee: record?.numStudentsFullFee || "",
-    numDiscountedStudents: record?.numDiscountedStudents || "",
-    discount: record?.discount || "",
-    payType: record?.payType || "",
-    oldStudent: record?.oldStudent || "",
-    freeStudentCount: record?.freeStudentCount || "",
-    totalTuitionFee: record?.totalTuitionFee || "",
-    facilitiesFee: record?.facilitiesFee || "",
-    adminDeduction: record?.adminDeduction || "",
-    agentCommission: record?.agentCommission || "",
-    teacherDeduction: record?.teacherDeduction || "",
-    totalDeduction: record?.totalDeduction || "",
-    actualReceivable: record?.actualReceivable || "",
-    submittedToCenter: record?.submittedToCenter || "",
-    collectionDate: record?.collectionDate
-      ? new Date(record.collectionDate).toISOString().split("T")[0]
-      : "",
-    difference: record?.difference || "",
-    selfEnrollCount: record?.selfEnrollCount || "",
-    retentionRate: record?.retentionRate || "",
-    staffInvolved: record?.staffInvolved || "",
-    hrRetention: record?.hrRetention || "",
-    hrContract: record?.hrContract || "",
-    schoolDeductionMethod: record?.schoolDeductionMethod || "",
-    centerDeductionMethod: record?.centerDeductionMethod || "",
-    contractStatus: record?.contractStatus || "",
-    teacherRate: record?.teacherRate || "",
   });
 
   useEffect(() => {
@@ -78,19 +43,37 @@ export default function IncomeModal({
   const fetchCenters = async () => {
     const response = await fetch("/api/centers");
     const data = await response.json();
-    setCenters(data);
+    // API returns shape { data: Center[], pagination: ... }
+    const centersArray = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : [];
+    setCenters(centersArray);
   };
 
   const fetchPrograms = async () => {
     const response = await fetch("/api/programs");
     const data = await response.json();
-    setPrograms(data);
+    // API returns shape { data: Program[], pagination: ... }
+    const programsArray = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : [];
+    setPrograms(programsArray);
   };
 
   const fetchPartners = async () => {
     const response = await fetch("/api/partners");
     const data = await response.json();
-    setPartners(data);
+    // API returns shape { data: Partner[], pagination: ... }
+    const partnersArray = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : [];
+    setPartners(partnersArray);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,6 +85,7 @@ export default function IncomeModal({
       const formData = new FormData();
       formData.append("file", file);
       formData.append("module", "income");
+      formData.append("path", "victoria-academy-finance/storage/finance");
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -130,75 +114,17 @@ export default function IncomeModal({
         ...formData,
         // Convert empty strings to null for optional fields
         partnerId: formData.partnerId || null,
-        tuitionFeeFullYear: formData.tuitionFeeFullYear
-          ? parseFloat(formData.tuitionFeeFullYear)
-          : null,
-        tuitionFeeHalfYear: formData.tuitionFeeHalfYear
-          ? parseFloat(formData.tuitionFeeHalfYear)
-          : null,
-        tuitionFeeDiscount: formData.tuitionFeeDiscount
-          ? parseFloat(formData.tuitionFeeDiscount)
-          : null,
-        tuitionFeeOld: formData.tuitionFeeOld
-          ? parseFloat(formData.tuitionFeeOld)
-          : null,
-        sessionCount: formData.sessionCount
-          ? parseInt(formData.sessionCount)
-          : null,
-        sessionCountNew: formData.sessionCountNew
-          ? parseInt(formData.sessionCountNew)
-          : null,
-        numClassesHalfFee: formData.numClassesHalfFee
-          ? parseInt(formData.numClassesHalfFee)
-          : null,
-        numClassesFullFee: formData.numClassesFullFee
-          ? parseInt(formData.numClassesFullFee)
-          : null,
-        numStudentsHalfFee: formData.numStudentsHalfFee
-          ? parseInt(formData.numStudentsHalfFee)
-          : null,
-        numStudentsFullFee: formData.numStudentsFullFee
-          ? parseInt(formData.numStudentsFullFee)
-          : null,
-        numDiscountedStudents: formData.numDiscountedStudents
-          ? parseInt(formData.numDiscountedStudents)
-          : null,
-        discount: formData.discount ? parseFloat(formData.discount) : null,
-        freeStudentCount: formData.freeStudentCount
-          ? parseInt(formData.freeStudentCount)
-          : null,
         totalTuitionFee: formData.totalTuitionFee
           ? parseFloat(formData.totalTuitionFee)
           : null,
-        facilitiesFee: formData.facilitiesFee
-          ? parseFloat(formData.facilitiesFee)
-          : null,
-        adminDeduction: formData.adminDeduction
-          ? parseFloat(formData.adminDeduction)
-          : null,
         agentCommission: formData.agentCommission
           ? parseFloat(formData.agentCommission)
-          : null,
-        teacherDeduction: formData.teacherDeduction
-          ? parseFloat(formData.teacherDeduction)
           : null,
         totalDeduction: formData.totalDeduction
           ? parseFloat(formData.totalDeduction)
           : null,
         actualReceivable: formData.actualReceivable
           ? parseFloat(formData.actualReceivable)
-          : null,
-        submittedToCenter: formData.submittedToCenter
-          ? parseFloat(formData.submittedToCenter)
-          : null,
-        collectionDate: formData.collectionDate
-          ? new Date(formData.collectionDate)
-          : null,
-        difference: formData.difference
-          ? parseFloat(formData.difference)
-          : null,
-        selfEnrollCount: formData.selfEnrollCount
-          ? parseInt(formData.selfEnrollCount)
           : null,
       };
 
@@ -227,9 +153,9 @@ export default function IncomeModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+    <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">
             {record ? "Sửa thu nhập" : "Thêm thu nhập mới"}
           </h2>
@@ -241,10 +167,11 @@ export default function IncomeModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="label">Tháng</label>
+              <label className="label">THÁNG</label>
               <select
                 value={formData.month}
                 onChange={(e) =>
@@ -262,60 +189,28 @@ export default function IncomeModal({
             </div>
 
             <div>
-              <label className="label">Năm</label>
-              <input
-                type="number"
-                value={formData.year}
+              <label className="label">TRUNG TÂM</label>
+              <select
+                value={formData.centerId}
                 onChange={(e) =>
-                  setFormData({ ...formData, year: parseInt(e.target.value) })
+                  setFormData({ ...formData, centerId: e.target.value })
                 }
                 className="input"
                 required
-              />
+              >
+                <option value="">Chọn trung tâm</option>
+                {centers &&
+                  centers?.map((center) => (
+                    <option key={center.id} value={center.id}>
+                      {center.name}
+                    </option>
+                  ))}
+              </select>
             </div>
           </div>
 
           <div>
-            <label className="label">Trung tâm</label>
-            <select
-              value={formData.centerId}
-              onChange={(e) =>
-                setFormData({ ...formData, centerId: e.target.value })
-              }
-              className="input"
-              required
-            >
-              <option value="">Chọn trung tâm</option>
-              {centers &&
-                centers?.map((center) => (
-                  <option key={center.id} value={center.id}>
-                    {center.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="label">Chương trình</label>
-            <select
-              value={formData.programId}
-              onChange={(e) =>
-                setFormData({ ...formData, programId: e.target.value })
-              }
-              className="input"
-              required
-            >
-              <option value="">Chọn chương trình</option>
-              {programs.map((program) => (
-                <option key={program.id} value={program.id}>
-                  {program.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="label">Đối tác (tùy chọn)</label>
+            <label className="label">TÊN ĐỐI TÁC</label>
             <select
               value={formData.partnerId}
               onChange={(e) =>
@@ -324,29 +219,19 @@ export default function IncomeModal({
               className="input"
             >
               <option value="">Không có đối tác</option>
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
-              {partners && partners?.map((partner) => (
-                <option key={partner.id} value={partner.id}>
-                  {partner.name}
-                </option>
-              ))}
-=======
               {partners &&
                 partners?.map((partner) => (
                   <option key={partner.id} value={partner.id}>
                     {partner.name}
                   </option>
                 ))}
->>>>>>> 1715de4 (update)
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Class and Student Information */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="label">Số lớp</label>
+              <label className="label">SỐ LỚP</label>
               <input
                 type="number"
                 value={formData.numberOfClasses}
@@ -362,7 +247,7 @@ export default function IncomeModal({
             </div>
 
             <div>
-              <label className="label">Số học viên</label>
+              <label className="label">SỐ HỌC SINH (100% hp)</label>
               <input
                 type="number"
                 value={formData.numberOfStudents}
@@ -378,22 +263,79 @@ export default function IncomeModal({
             </div>
           </div>
 
-          <div>
-            <label className="label">Doanh thu (VNĐ)</label>
-            <input
-              type="number"
-              value={formData.revenue}
-              onChange={(e) =>
-                setFormData({ ...formData, revenue: e.target.value })
-              }
-              className="input"
-              required
-              min="0"
-              step="1000"
-            />
+          {/* Financial Information */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Tổng học phí</label>
+              <input
+                type="number"
+                value={formData.totalTuitionFee}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    totalTuitionFee: e.target.value,
+                  })
+                }
+                className="input"
+                min="0"
+                step="1000"
+              />
+            </div>
+
+            <div>
+              <label className="label">Trích BGH</label>
+              <input
+                type="number"
+                value={formData.agentCommission}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    agentCommission: e.target.value,
+                  })
+                }
+                className="input"
+                min="0"
+                step="1000"
+              />
+            </div>
+
+            <div>
+              <label className="label">Tổng trích về trường</label>
+              <input
+                type="number"
+                value={formData.totalDeduction}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    totalDeduction: e.target.value,
+                  })
+                }
+                className="input"
+                min="0"
+                step="1000"
+              />
+            </div>
+
+            <div>
+              <label className="label">Thực thu tại VIC</label>
+              <input
+                type="number"
+                value={formData.actualReceivable}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    actualReceivable: e.target.value,
+                  })
+                }
+                className="input"
+                min="0"
+                step="1000"
+              />
+            </div>
           </div>
 
-          <div>
+          {/* Status and Notes */}
+          {/* <div>
             <label className="label">Tình trạng</label>
             <input
               type="text"
@@ -404,7 +346,7 @@ export default function IncomeModal({
               className="input"
               placeholder="Ví dụ: Đã thu, Chưa thu"
             />
-          </div>
+          </div> */}
 
           <div>
             <label className="label">Ghi chú</label>
@@ -418,6 +360,7 @@ export default function IncomeModal({
             />
           </div>
 
+          {/* File Upload */}
           <div>
             <label className="label">Tải file đính kèm</label>
             <div className="mt-1">
@@ -436,538 +379,24 @@ export default function IncomeModal({
                 {uploading ? "Đang tải..." : "Chọn file"}
               </label>
               {formData.uploadedFileUrl && (
-                <p className="text-sm text-success-600 mt-2">
-                  ✓ File đã được tải lên
-                </p>
+                <div className="mt-2">
+                  <p className="text-sm text-success-600 mb-1">
+                    ✓ File đã được tải lên
+                  </p>
+                  <a
+                    href={formData.uploadedFileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary-600 hover:text-primary-700 underline"
+                  >
+                    Xem file đã tải lên
+                  </a>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Tuition Fee Section */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Học phí</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Học phí năm học đầy đủ</label>
-                <input
-                  type="number"
-                  value={formData.tuitionFeeFullYear}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      tuitionFeeFullYear: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Học phí nửa năm</label>
-                <input
-                  type="number"
-                  value={formData.tuitionFeeHalfYear}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      tuitionFeeHalfYear: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Giảm giá học phí</label>
-                <input
-                  type="number"
-                  value={formData.tuitionFeeDiscount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      tuitionFeeDiscount: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Học phí cũ</label>
-                <input
-                  type="number"
-                  value={formData.tuitionFeeOld}
-                  onChange={(e) =>
-                    setFormData({ ...formData, tuitionFeeOld: e.target.value })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Session and Class Counts */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-3">
-              Số buổi học và lớp học
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Tổng số buổi học</label>
-                <input
-                  type="number"
-                  value={formData.sessionCount}
-                  onChange={(e) =>
-                    setFormData({ ...formData, sessionCount: e.target.value })
-                  }
-                  className="input"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="label">Số buổi học mới</label>
-                <input
-                  type="number"
-                  value={formData.sessionCountNew}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      sessionCountNew: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="label">Số lớp học phí nửa năm</label>
-                <input
-                  type="number"
-                  value={formData.numClassesHalfFee}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      numClassesHalfFee: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="label">Số lớp học phí đầy đủ</label>
-                <input
-                  type="number"
-                  value={formData.numClassesFullFee}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      numClassesFullFee: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Student Counts */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-3">
-              Số lượng học viên
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Số học viên học phí nửa năm</label>
-                <input
-                  type="number"
-                  value={formData.numStudentsHalfFee}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      numStudentsHalfFee: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="label">Số học viên học phí đầy đủ</label>
-                <input
-                  type="number"
-                  value={formData.numStudentsFullFee}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      numStudentsFullFee: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="label">Số học viên được giảm giá</label>
-                <input
-                  type="number"
-                  value={formData.numDiscountedStudents}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      numDiscountedStudents: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="label">Số học viên miễn phí</label>
-                <input
-                  type="number"
-                  value={formData.freeStudentCount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      freeStudentCount: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="label">Số học viên tự đăng ký</label>
-                <input
-                  type="number"
-                  value={formData.selfEnrollCount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      selfEnrollCount: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Payment and Financial Details */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-3">
-              Chi tiết tài chính
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Giảm giá</label>
-                <input
-                  type="number"
-                  value={formData.discount}
-                  onChange={(e) =>
-                    setFormData({ ...formData, discount: e.target.value })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Tổng học phí</label>
-                <input
-                  type="number"
-                  value={formData.totalTuitionFee}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      totalTuitionFee: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Phí cơ sở vật chất</label>
-                <input
-                  type="number"
-                  value={formData.facilitiesFee}
-                  onChange={(e) =>
-                    setFormData({ ...formData, facilitiesFee: e.target.value })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Khấu trừ quản lý</label>
-                <input
-                  type="number"
-                  value={formData.adminDeduction}
-                  onChange={(e) =>
-                    setFormData({ ...formData, adminDeduction: e.target.value })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Hoa hồng đại lý</label>
-                <input
-                  type="number"
-                  value={formData.agentCommission}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      agentCommission: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Khấu trừ giáo viên</label>
-                <input
-                  type="number"
-                  value={formData.teacherDeduction}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      teacherDeduction: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Tổng khấu trừ</label>
-                <input
-                  type="number"
-                  value={formData.totalDeduction}
-                  onChange={(e) =>
-                    setFormData({ ...formData, totalDeduction: e.target.value })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Thực thu</label>
-                <input
-                  type="number"
-                  value={formData.actualReceivable}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      actualReceivable: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Đã nộp cho trung tâm</label>
-                <input
-                  type="number"
-                  value={formData.submittedToCenter}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      submittedToCenter: e.target.value,
-                    })
-                  }
-                  className="input"
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <label className="label">Chênh lệch</label>
-                <input
-                  type="number"
-                  value={formData.difference}
-                  onChange={(e) =>
-                    setFormData({ ...formData, difference: e.target.value })
-                  }
-                  className="input"
-                  step="1000"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Collection Date */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-3">
-              Thông tin thu thập
-            </h3>
-            <div>
-              <label className="label">Ngày thu tiền</label>
-              <input
-                type="date"
-                value={formData.collectionDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, collectionDate: e.target.value })
-                }
-                className="input"
-              />
-            </div>
-          </div>
-
-          {/* Additional Information */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-3">
-              Thông tin bổ sung
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">Hình thức thanh toán</label>
-                <input
-                  type="text"
-                  value={formData.payType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, payType: e.target.value })
-                  }
-                  className="input"
-                  placeholder="Ví dụ: Tiền mặt, Chuyển khoản"
-                />
-              </div>
-              <div>
-                <label className="label">Học viên cũ</label>
-                <input
-                  type="text"
-                  value={formData.oldStudent}
-                  onChange={(e) =>
-                    setFormData({ ...formData, oldStudent: e.target.value })
-                  }
-                  className="input"
-                  placeholder="Thông tin học viên cũ"
-                />
-              </div>
-              <div>
-                <label className="label">Tỷ lệ giữ chân</label>
-                <input
-                  type="text"
-                  value={formData.retentionRate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, retentionRate: e.target.value })
-                  }
-                  className="input"
-                  placeholder="Ví dụ: 85%"
-                />
-              </div>
-              <div>
-                <label className="label">Nhân viên tham gia</label>
-                <input
-                  type="text"
-                  value={formData.staffInvolved}
-                  onChange={(e) =>
-                    setFormData({ ...formData, staffInvolved: e.target.value })
-                  }
-                  className="input"
-                  placeholder="Tên nhân viên"
-                />
-              </div>
-              <div>
-                <label className="label">HR giữ chân</label>
-                <input
-                  type="text"
-                  value={formData.hrRetention}
-                  onChange={(e) =>
-                    setFormData({ ...formData, hrRetention: e.target.value })
-                  }
-                  className="input"
-                  placeholder="Thông tin HR"
-                />
-              </div>
-              <div>
-                <label className="label">Hợp đồng HR</label>
-                <input
-                  type="text"
-                  value={formData.hrContract}
-                  onChange={(e) =>
-                    setFormData({ ...formData, hrContract: e.target.value })
-                  }
-                  className="input"
-                  placeholder="Trạng thái hợp đồng"
-                />
-              </div>
-              <div>
-                <label className="label">Phương pháp khấu trừ trường</label>
-                <input
-                  type="text"
-                  value={formData.schoolDeductionMethod}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      schoolDeductionMethod: e.target.value,
-                    })
-                  }
-                  className="input"
-                  placeholder="Phương pháp khấu trừ"
-                />
-              </div>
-              <div>
-                <label className="label">Phương pháp khấu trừ trung tâm</label>
-                <input
-                  type="text"
-                  value={formData.centerDeductionMethod}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      centerDeductionMethod: e.target.value,
-                    })
-                  }
-                  className="input"
-                  placeholder="Phương pháp khấu trừ"
-                />
-              </div>
-              <div>
-                <label className="label">Trạng thái hợp đồng</label>
-                <input
-                  type="text"
-                  value={formData.contractStatus}
-                  onChange={(e) =>
-                    setFormData({ ...formData, contractStatus: e.target.value })
-                  }
-                  className="input"
-                  placeholder="Ví dụ: Đang hoạt động, Hết hạn"
-                />
-              </div>
-              <div>
-                <label className="label">Mức lương giáo viên</label>
-                <input
-                  type="text"
-                  value={formData.teacherRate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, teacherRate: e.target.value })
-                  }
-                  className="input"
-                  placeholder="Mức lương hoặc tỷ lệ"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4 sm:pt-6 border-t border-gray-200">
             <button type="button" onClick={onClose} className="btn-secondary">
               Hủy
             </button>

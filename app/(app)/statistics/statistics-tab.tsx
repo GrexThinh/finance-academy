@@ -8,10 +8,15 @@ interface IncomeRecord {
   month: number;
   year: number;
   center: { id: string; name: string };
-  program: { id: string; name: string };
+  partner?: { id: string; name: string } | null;
   numberOfClasses: number;
   numberOfStudents: number;
-  revenue: string;
+  totalTuitionFee?: string;
+  agentCommission?: string;
+  totalDeduction?: string;
+  actualReceivable?: string;
+  status?: string;
+  notes?: string;
 }
 
 interface Center {
@@ -27,14 +32,14 @@ interface Program {
 export default function StatisticsTab() {
   const [records, setRecords] = useState<IncomeRecord[]>([]);
   const [centers, setCenters] = useState<Center[]>([]);
-  const [programs, setPrograms] = useState<Program[]>([]);
+  const [partners, setPartners] = useState<Center[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
   const [selectedYear, setSelectedYear] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [selectedCenter, setSelectedCenter] = useState<string>("");
-  const [selectedProgram, setSelectedProgram] = useState<string>("");
+  const [selectedPartner, setSelectedPartner] = useState<string>("");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,13 +62,13 @@ export default function StatisticsTab() {
   useEffect(() => {
     fetchRecords(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear, selectedMonth, selectedCenter, selectedProgram]);
+  }, [selectedYear, selectedMonth, selectedCenter, selectedPartner]);
 
   const fetchOptions = async () => {
     try {
-      const [centersRes, programsRes] = await Promise.all([
+      const [centersRes, partnersRes] = await Promise.all([
         fetch("/api/centers?limit=1000"),
-        fetch("/api/programs?limit=1000"),
+        fetch("/api/partners?limit=1000"),
       ]);
 
       if (centersRes.ok) {
@@ -71,14 +76,14 @@ export default function StatisticsTab() {
         setCenters(Array.isArray(centersJson.data) ? centersJson.data : []);
       }
 
-      if (programsRes.ok) {
-        const programsJson = await programsRes.json();
-        setPrograms(Array.isArray(programsJson.data) ? programsJson.data : []);
+      if (partnersRes.ok) {
+        const partnersJson = await partnersRes.json();
+        setPartners(Array.isArray(partnersJson.data) ? partnersJson.data : []);
       }
     } catch (error) {
       console.error("Error fetching filter options:", error);
       setCenters([]);
-      setPrograms([]);
+      setPartners([]);
     }
   };
 
@@ -93,7 +98,7 @@ export default function StatisticsTab() {
       if (selectedYear) params.append("year", selectedYear);
       if (selectedMonth) params.append("month", selectedMonth);
       if (selectedCenter) params.append("centerId", selectedCenter);
-      if (selectedProgram) params.append("programId", selectedProgram);
+      if (selectedPartner) params.append("partnerId", selectedPartner);
 
       const response = await fetch(`/api/income?${params.toString()}`);
       if (response.ok) {
@@ -124,7 +129,7 @@ export default function StatisticsTab() {
       if (selectedYear) params.append("year", selectedYear);
       if (selectedMonth) params.append("month", selectedMonth);
       if (selectedCenter) params.append("centerId", selectedCenter);
-      if (selectedProgram) params.append("programId", selectedProgram);
+      if (selectedPartner) params.append("partnerId", selectedPartner);
 
       const response = await fetch(`/api/export?${params.toString()}`);
       const blob = await response.blob();
@@ -155,7 +160,7 @@ export default function StatisticsTab() {
         (acc, record) => ({
           classes: acc.classes + (record.numberOfClasses || 0),
           students: acc.students + (record.numberOfStudents || 0),
-          revenue: acc.revenue + Number(record.revenue || 0),
+          revenue: acc.revenue + Number(record.actualReceivable || 0),
         }),
         { classes: 0, students: 0, revenue: 0 }
       ),
@@ -249,17 +254,17 @@ export default function StatisticsTab() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">
-              Chương trình
+              Đối tác
             </label>
             <select
-              value={selectedProgram}
-              onChange={(e) => setSelectedProgram(e.target.value)}
+              value={selectedPartner}
+              onChange={(e) => setSelectedPartner(e.target.value)}
               className="input"
             >
-              <option value="">Tất cả chương trình</option>
-              {programs.map((program) => (
-                <option key={program.id} value={program.id}>
-                  {program.name}
+              <option value="">Tất cả đối tác</option>
+              {partners.map((partner) => (
+                <option key={partner.id} value={partner.id}>
+                  {partner.name}
                 </option>
               ))}
             </select>
@@ -313,7 +318,7 @@ export default function StatisticsTab() {
                   Trung tâm
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Chương trình
+                  Đối tác
                 </th>
                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
                   Số lớp
@@ -322,7 +327,7 @@ export default function StatisticsTab() {
                   Số học viên
                 </th>
                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                  Doanh thu
+                  Thực thu tại VIC
                 </th>
               </tr>
             </thead>
@@ -355,7 +360,7 @@ export default function StatisticsTab() {
                       {record.center?.name || "N/A"}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {record.program?.name || "N/A"}
+                      {record.partner?.name || "-"}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-right text-gray-900">
                       {record.numberOfClasses}
@@ -364,7 +369,7 @@ export default function StatisticsTab() {
                       {record.numberOfStudents}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-right font-semibold text-success-600">
-                      {formatCurrency(record.revenue)}
+                      {formatCurrency(record.actualReceivable || "0")}
                     </td>
                   </tr>
                 ))

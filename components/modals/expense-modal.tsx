@@ -60,13 +60,8 @@ export default function ExpenseModal({
     try {
       const formData = new FormData();
       formData.append("file", file);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
       formData.append("module", "expenses");
->>>>>>> 1715de4 (update)
-=======
->>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
+      formData.append("path", "victoria-academy-finance/storage/finance");
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -177,37 +172,35 @@ export default function ExpenseModal({
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Khoản chi</label>
-              <input
-                type="text"
-                value={formData.category}
-                onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value })
-                }
-                className="input"
-                placeholder="Nhập khoản chi"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="label">Hạng mục</label>
-              <input
-                type="text"
-                value={formData.item}
-                onChange={(e) =>
-                  setFormData({ ...formData, item: e.target.value })
-                }
-                className="input"
-                placeholder="Nhập hạng mục"
-                required
-              />
-            </div>
+          <div>
+            <label className="label">Khoản chi</label>
+            <input
+              type="text"
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
+              className="input"
+              placeholder="Nhập khoản chi"
+              required
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">Hạng mục</label>
+            <input
+              type="text"
+              value={formData.item}
+              onChange={(e) =>
+                setFormData({ ...formData, item: e.target.value })
+              }
+              className="input"
+              placeholder="Nhập hạng mục"
+              required
+            />
+          </div>
+
+          {/* <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Chức vụ</label>
               <input
@@ -231,9 +224,9 @@ export default function ExpenseModal({
                 className="input"
               />
             </div>
-          </div>
+          </div> */}
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Số giờ</label>
               <input
@@ -259,9 +252,9 @@ export default function ExpenseModal({
                 step="1000"
               />
             </div>
-          </div>
+          </div> */}
 
-          <div>
+          {/* <div>
             <label className="label">Thành tiền (VNĐ)</label>
             <input
               type="number"
@@ -301,7 +294,7 @@ export default function ExpenseModal({
                 step="1000"
               />
             </div>
-          </div>
+          </div> */}
 
           <div>
             <label className="label">Phụ trách</label>
@@ -372,9 +365,19 @@ export default function ExpenseModal({
                 {uploading ? "Đang tải..." : "Chọn file"}
               </label>
               {formData.uploadedFileUrl && (
-                <p className="text-sm text-success-600 mt-2">
-                  ✓ File đã được tải lên
-                </p>
+                <div className="mt-2">
+                  <p className="text-sm text-success-600 mb-1">
+                    ✓ File đã được tải lên
+                  </p>
+                  <a
+                    href={formData.uploadedFileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary-600 hover:text-primary-700 underline"
+                  >
+                    Xem file đã tải lên
+                  </a>
+                </div>
               )}
             </div>
           </div>

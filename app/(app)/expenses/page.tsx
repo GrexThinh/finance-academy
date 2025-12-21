@@ -26,6 +26,7 @@ interface ExpenseRecord {
   status?: string;
   total: string;
   notes?: string;
+  uploadedFileUrl?: string;
 }
 
 export default function ExpensesPage() {
@@ -247,9 +248,12 @@ export default function ExpensesPage() {
           } select-none`}
           {...handlers}
         >
-          <table className="w-full min-w-[800px] text-sm">
+          <table className="w-full min-w-[1000px] text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-12">
+                  No.
+                </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                   Thời gian
                 </th>
@@ -263,10 +267,19 @@ export default function ExpensesPage() {
                   Hạng mục
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Số tiền
+                  Phụ trách
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  Tình trạng
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                   Tổng
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  Ghi chú
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                  File đính kèm
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                   Hành động
@@ -277,7 +290,7 @@ export default function ExpensesPage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={11}
                     className="px-3 py-2 text-center text-gray-500"
                   >
                     Đang tải...
@@ -286,15 +299,18 @@ export default function ExpensesPage() {
               ) : records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={11}
                     className="px-3 py-2 text-center text-gray-500"
                   >
                     Không có dữ liệu
                   </td>
                 </tr>
               ) : (
-                records.map((record) => (
+                records.map((record, index) => (
                   <tr key={record.id} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                      {((currentPage - 1) * itemsPerPage) + index + 1}
+                    </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                       {getMonthName(record.month)} {record.year}
                     </td>
@@ -302,16 +318,36 @@ export default function ExpensesPage() {
                       {record.center.name}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {record.category}
+                      {record.category || "-"}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {record.item}
+                      {record.item || "-"}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(record.amount)}
+                      {record.responsible || "-"}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                      {record.status || "-"}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm font-semibold text-danger-600">
                       {formatCurrency(record.total)}
+                    </td>
+                    <td className="px-3 py-2 text-sm text-gray-900 max-w-[150px] truncate" title={record.notes}>
+                      {record.notes || "-"}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                      {record.uploadedFileUrl ? (
+                        <a
+                          href={record.uploadedFileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary-600 hover:text-primary-700 underline text-xs"
+                        >
+                          Xem file
+                        </a>
+                      ) : (
+                        <span className="text-gray-400 text-xs">-</span>
+                      )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                       <div className="flex gap-2">
@@ -416,4 +452,3 @@ export default function ExpensesPage() {
     </div>
   );
 }
-

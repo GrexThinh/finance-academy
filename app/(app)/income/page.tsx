@@ -13,50 +13,16 @@ interface IncomeRecord {
   month: number;
   year: number;
   center: { id: string; name: string };
-  program: { id: string; name: string };
   partner?: { id: string; name: string } | null;
   numberOfClasses: number;
   numberOfStudents: number;
-  revenue: string;
+  totalTuitionFee?: string;
+  agentCommission?: string;
+  totalDeduction?: string;
+  actualReceivable?: string;
   status?: string;
   notes?: string;
   uploadedFileUrl?: string;
-
-  // New spreadsheet fields
-  tuitionFeeFullYear?: string;
-  tuitionFeeHalfYear?: string;
-  tuitionFeeDiscount?: string;
-  tuitionFeeOld?: string;
-  sessionCount?: number;
-  sessionCountNew?: number;
-  numClassesHalfFee?: number;
-  numClassesFullFee?: number;
-  numStudentsHalfFee?: number;
-  numStudentsFullFee?: number;
-  numDiscountedStudents?: number;
-  discount?: string;
-  payType?: string;
-  oldStudent?: string;
-  freeStudentCount?: number;
-  totalTuitionFee?: string;
-  facilitiesFee?: string;
-  adminDeduction?: string;
-  agentCommission?: string;
-  teacherDeduction?: string;
-  totalDeduction?: string;
-  actualReceivable?: string;
-  submittedToCenter?: string;
-  collectionDate?: string | null;
-  difference?: string;
-  selfEnrollCount?: number;
-  retentionRate?: string;
-  staffInvolved?: string;
-  hrRetention?: string;
-  hrContract?: string;
-  schoolDeductionMethod?: string;
-  centerDeductionMethod?: string;
-  contractStatus?: string;
-  teacherRate?: string;
 }
 
 export default function IncomePage() {
@@ -243,31 +209,52 @@ export default function IncomePage() {
           } select-none`}
           {...handlers}
         >
-          <table className="w-full">
+          <table className="w-full min-w-[1300px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thời gian
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                  No.
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trung tâm
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[60px]">
+                  NĂM
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Chương trình
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+                  THÁNG
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đối tác
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                  TRUNG TÂM
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Số lớp
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                  TÊN ĐỐI TÁC
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Học viên
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+                  SỐ LỚP
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Doanh thu
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                  SỐ HỌC SINH (100% hp)
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                  Tổng học phí
+                </th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                  Trích BGH
+                </th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                  Tổng trích về trường
+                </th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                  Thực thu tại VIC
+                </th>
+                {/* <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                  Tình trạng
+                </th> */}
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+                  Ghi chú
+                </th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                  File đính kèm
+                </th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
                   Hành động
                 </th>
               </tr>
@@ -276,7 +263,7 @@ export default function IncomePage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={15}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     Đang tải...
@@ -285,50 +272,82 @@ export default function IncomePage() {
               ) : records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={15}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     Không có dữ liệu
                   </td>
                 </tr>
               ) : (
-                records.map((record) => (
+                records.map((record, index) => (
                   <tr key={record.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {getMonthName(record.month)} {record.year}
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {((currentPage - 1) * itemsPerPage) + index + 1}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {record.year}
+                    </td>
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                      Tháng {record.month}
+                    </td>
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.center?.name || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.program?.name || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.partner?.name || "-"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.numberOfClasses}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.numberOfStudents}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-success-600">
-                      {formatCurrency(record.revenue)}
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {record.totalTuitionFee ? formatCurrency(record.totalTuitionFee) : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex gap-2">
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {record.agentCommission ? formatCurrency(record.agentCommission) : '-'}
+                    </td>
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {record.totalDeduction ? formatCurrency(record.totalDeduction) : '-'}
+                    </td>
+                    <td className="px-2 py-4 whitespace-nowrap text-sm font-semibold text-success-600">
+                      {record.actualReceivable ? formatCurrency(record.actualReceivable) : '-'}
+                    </td>
+                    {/* <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {record.status || '-'}
+                    </td> */}
+                    <td className="px-2 py-4 text-sm text-gray-900 max-w-[150px] truncate" title={record.notes}>
+                      {record.notes || '-'}
+                    </td>
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {record.uploadedFileUrl ? (
+                        <a
+                          href={record.uploadedFileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary-600 hover:text-primary-700 underline text-xs"
+                        >
+                          Xem file
+                        </a>
+                      ) : (
+                        <span className="text-gray-400 text-xs">-</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div className="flex gap-1">
                         <button
                           onClick={() => {
                             setEditingRecord(record);
                             setModalOpen(true);
                           }}
-                          className="text-primary-600 hover:text-primary-700 font-medium"
+                          className="text-primary-600 hover:text-primary-700 font-medium text-xs"
                         >
                           Sửa
                         </button>
                         <button
                           onClick={() => handleDelete(record.id)}
-                          className="text-danger-600 hover:text-danger-700 font-medium"
+                          className="text-danger-600 hover:text-danger-700 font-medium text-xs"
                         >
                           Xóa
                         </button>

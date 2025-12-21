@@ -271,6 +271,9 @@ export default function ProfitLossPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-12">
+                  No.
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Thời gian
                 </th>
@@ -295,7 +298,7 @@ export default function ProfitLossPage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     Đang tải...
@@ -304,7 +307,7 @@ export default function ProfitLossPage() {
               ) : data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     Không có dữ liệu
@@ -316,6 +319,9 @@ export default function ProfitLossPage() {
                     item.income > 0 ? (item.profit / item.income) * 100 : 0;
                   return (
                     <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {index + 1}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {getMonthName(item.month)} {item.year}
                       </td>

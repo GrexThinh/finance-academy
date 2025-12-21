@@ -1,10 +1,6 @@
 "use client";
 
 import { useState } from "react";
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { Upload, X, FileSpreadsheet, AlertCircle, CheckCircle } from "lucide-react";
-=======
 import {
   Upload,
   X,
@@ -12,10 +8,6 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
->>>>>>> 1715de4 (update)
-=======
-import { Upload, X, FileSpreadsheet, AlertCircle, CheckCircle } from "lucide-react";
->>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
 
 interface ExcelImportModalProps {
   isOpen: boolean;
@@ -38,13 +30,7 @@ export default function ExcelImportModal({
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
   const [storeFile, setStoreFile] = useState(false);
->>>>>>> 1715de4 (update)
-=======
->>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -84,13 +70,8 @@ export default function ExcelImportModal({
     try {
       const formData = new FormData();
       formData.append("file", file);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
       formData.append("storeFile", storeFile.toString());
->>>>>>> 1715de4 (update)
-=======
->>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
+      formData.append("path", "victoria-academy-finance/storage/finance");
 
       const response = await fetch("/api/import", {
         method: "POST",
@@ -117,13 +98,7 @@ export default function ExcelImportModal({
     setFile(null);
     setResult(null);
     setError(null);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
     setStoreFile(false);
->>>>>>> 1715de4 (update)
-=======
->>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
     onClose();
   };
 
@@ -162,9 +137,6 @@ export default function ExcelImportModal({
               </div>
             </div>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
             {/* File storage option */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <label className="flex items-center">
@@ -186,9 +158,6 @@ export default function ExcelImportModal({
               </label>
             </div>
 
->>>>>>> 1715de4 (update)
-=======
->>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
             {/* File upload area */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
               <div className="text-center">
@@ -255,17 +224,9 @@ export default function ExcelImportModal({
                       <p>• Chi phí: {result.expenseImported} bản ghi</p>
                       {result.errors.length > 0 && (
                         <div className="mt-3">
-<<<<<<< HEAD
-<<<<<<< HEAD
-                          <p className="font-medium text-red-700">Lỗi ({result.errors.length}):</p>
-=======
                           <p className="font-medium text-red-700">
                             Lỗi ({result.errors.length}):
                           </p>
->>>>>>> 1715de4 (update)
-=======
-                          <p className="font-medium text-red-700">Lỗi ({result.errors.length}):</p>
->>>>>>> eabdfa0f6b2373f5c9ab4bb8c6053a86a3bff72c
                           <ul className="list-disc list-inside mt-1 space-y-1">
                             {result.errors.slice(0, 5).map((error, index) => (
                               <li key={index} className="text-red-600 text-xs">

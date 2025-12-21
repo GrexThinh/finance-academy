@@ -271,7 +271,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Import Options */}
-      <div className="card">
+      {/* <div className="card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Tải dữ liệu từ Excel
         </h3>
@@ -284,7 +284,7 @@ export default function DashboardPage() {
             Tải lên Excel
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* Export Options */}
       <div className="card">
@@ -362,13 +362,8 @@ export default function DashboardPage() {
             Top 5 trung tâm có doanh thu cao nhất
           </h3>
           <div className="space-y-4">
-            {data.topCenters.map((center, index) => (
+            {data.topCenters.map((center) => (
               <div key={center.centerId} className="flex items-center gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-semibold text-primary-700">
-                    {index + 1}
-                  </span>
-                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {center.centerName}
@@ -495,16 +490,11 @@ export default function DashboardPage() {
           </h3>
           {data.profitMargins && data.profitMargins.length > 0 ? (
             <div className="space-y-4">
-              {data.profitMargins.map((center, index) => (
+              {data.profitMargins.map((center) => (
                 <div
                   key={center.centerName}
                   className="flex items-center gap-4"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-semibold text-primary-700">
-                      {index + 1}
-                    </span>
-                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {center.centerName}
@@ -612,4 +602,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
