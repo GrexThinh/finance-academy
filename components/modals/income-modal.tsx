@@ -166,7 +166,6 @@ export default function IncomeModal({
             <X className="w-6 h-6" />
           </button>
         </div>
-
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
           {/* Basic Information */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -189,6 +188,20 @@ export default function IncomeModal({
             </div>
 
             <div>
+              <label className="label">Năm</label>
+              <input
+                type="number"
+                value={formData.year}
+                onChange={(e) =>
+                  setFormData({ ...formData, year: parseInt(e.target.value) })
+                }
+                className="input"
+                required
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
               <label className="label">TRUNG TÂM</label>
               <select
                 value={formData.centerId}
@@ -207,25 +220,25 @@ export default function IncomeModal({
                   ))}
               </select>
             </div>
-          </div>
 
-          <div>
-            <label className="label">TÊN ĐỐI TÁC</label>
-            <select
-              value={formData.partnerId}
-              onChange={(e) =>
-                setFormData({ ...formData, partnerId: e.target.value })
-              }
-              className="input"
-            >
-              <option value="">Không có đối tác</option>
-              {partners &&
-                partners?.map((partner) => (
-                  <option key={partner.id} value={partner.id}>
-                    {partner.name}
-                  </option>
-                ))}
-            </select>
+            <div>
+              <label className="label">TÊN ĐỐI TÁC</label>
+              <select
+                value={formData.partnerId}
+                onChange={(e) =>
+                  setFormData({ ...formData, partnerId: e.target.value })
+                }
+                className="input"
+              >
+                <option value="">Không có đối tác</option>
+                {partners &&
+                  partners?.map((partner) => (
+                    <option key={partner.id} value={partner.id}>
+                      {partner.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
           </div>
 
           {/* Class and Student Information */}
