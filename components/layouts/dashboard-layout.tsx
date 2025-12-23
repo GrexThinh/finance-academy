@@ -38,6 +38,12 @@ const navigation = [
       { name: "Trung tâm", href: "/catalog/centers", icon: Building },
       { name: "Chương trình", href: "/catalog/programs", icon: BookOpen },
       { name: "Đối tác", href: "/catalog/partners", icon: Handshake },
+      { name: "Hạng mục", href: "/catalog/expense-items", icon: FileText },
+      {
+        name: "Người phụ trách",
+        href: "/catalog/responsible-persons",
+        icon: Users,
+      },
     ],
   },
 ];

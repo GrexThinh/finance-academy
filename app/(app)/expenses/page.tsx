@@ -1,452 +1,215 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { Plus, Download } from "lucide-react";
-import { formatCurrency, getMonthName } from "@/lib/utils";
-import { useDragScroll } from "@/lib/use-drag-scroll";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import ExpenseModal from "@/components/modals/expense-modal";
 
 interface ExpenseRecord {
   id: string;
   month: number;
   year: number;
-  center: { id: string; name: string };
-  category: string;
-  item: string;
-  position?: string;
-  contractType?: string;
-  hours?: string;
-  unitPrice?: string;
-  amount: string;
-  kilometers?: string;
-  travelAllowance?: string;
-  responsible?: string;
-  status?: string;
-  total: string;
-  notes?: string;
-  uploadedFileUrl?: string;
+  amount: number;
+  total: number;
+  notes: string | null;
+  center: { name: string };
+  category: string | null;
+  item: { name: string } | null;
+  status: string | null;
+  responsible: { name: string } | null;
 }
 
 export default function ExpensesPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
   const [records, setRecords] = useState<ExpenseRecord[]>([]);
-  const [centers, setCenters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<ExpenseRecord | null>(
-    null
-  );
-
-  // Filter state
-  const [selectedYear, setSelectedYear] = useState<string>("");
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
-  const [selectedCenter, setSelectedCenter] = useState<string>("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
-
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const {
-    ref: tableRef,
-    isDragging,
-    handlers,
-  } = useDragScroll({ dragSpeed: 2 });
+  const [totalPages, setTotalPages] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<ExpenseRecord | null>(null);
 
   useEffect(() => {
-    if (status === "loading") return; // Still loading
+    fetchRecords();
+  }, [currentPage]);
 
-    if (status === "unauthenticated" || !session) {
-      router.push("/login");
-      return;
-    }
-
-    fetchRecords(1); // Reset to page 1 when component mounts
-    fetchCenters();
-  }, [status, session, router]);
-
-  const fetchRecords = async (page = currentPage) => {
+  const fetchRecords = async () => {
     try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: itemsPerPage.toString(),
-      });
-
-      const response = await fetch(`/api/expenses?${params}`);
-      if (response.ok) {
-        const result = await response.json();
-        setRecords(Array.isArray(result.data) ? result.data : []);
-        setTotalCount(result.pagination?.totalCount || 0);
-        setTotalPages(result.pagination?.totalPages || 0);
-        setCurrentPage(page);
-      } else {
-        console.error("API error:", response.status, response.statusText);
-        setRecords([]);
-        setTotalCount(0);
-        setTotalPages(0);
-      }
+      const response = await fetch(`/api/expenses?page=${currentPage}&limit=10`);
+      const data = await response.json();
+      const recordsArray = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      setRecords(recordsArray);
+      setTotalPages(data?.pagination?.totalPages || 1);
     } catch (error) {
-      console.error("Error fetching expense records:", error);
-      setRecords([]);
-      setTotalCount(0);
-      setTotalPages(0);
+      console.error("Error fetching records:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchCenters = async () => {
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this expense record?")) return;
+
     try {
-      const response = await fetch("/api/centers");
+      const response = await fetch(`/api/expenses?id=${id}`, {
+        method: "DELETE",
+      });
+
       if (response.ok) {
-        const data = await response.json();
-        setCenters(Array.isArray(data) ? data : []);
+        fetchRecords();
       } else {
-        console.error("API error:", response.status, response.statusText);
-        setCenters([]);
+        alert("Failed to delete record");
       }
     } catch (error) {
-      console.error("Error fetching centers:", error);
-      setCenters([]);
-    }
-  };
-
-  const handleExport = async () => {
-    try {
-      const params = new URLSearchParams({ type: "expense" });
-      if (selectedYear) params.append("year", selectedYear);
-
-      const response = await fetch(`/api/export?${params}`);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `chi-phi-${Date.now()}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error("Error exporting data:", error);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa bản ghi này?")) return;
-
-    try {
-      await fetch(`/api/expenses?id=${id}`, { method: "DELETE" });
-      // If we're on a page that will be empty after deletion, go to previous page
-      const newTotalCount = totalCount - 1;
-      const newTotalPages = Math.ceil(newTotalCount / itemsPerPage);
-      const pageToFetch =
-        currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage;
-      fetchRecords(pageToFetch);
-    } catch (error) {
       console.error("Error deleting record:", error);
+      alert("Error deleting record");
     }
   };
 
-  // Calculate totals from current page data
-  const totals = records.reduce(
-    (acc, record) => ({
-      amount: acc.amount + parseFloat(record.amount),
-      total: acc.total + parseFloat(record.total),
-      count: acc.count + 1,
-    }),
-    { amount: 0, total: 0, count: 0 }
-  );
+  const handleCreateNew = () => {
+    setEditingRecord(null);
+    setShowModal(true);
+  };
+
+  const handleEdit = (record: ExpenseRecord) => {
+    setEditingRecord(record);
+    setShowModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    setEditingRecord(null);
+  };
+
+  const handleModalSuccess = () => {
+    setShowModal(false);
+    setEditingRecord(null);
+    fetchRecords();
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý chi phí</h1>
-          <p className="text-gray-600 mt-1">
-            Theo dõi và quản lý chi phí từ các trung tâm
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={handleExport}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Xuất Excel
-          </button>
-          <button
-            onClick={() => {
-              setEditingRecord(null);
-              setModalOpen(true);
-            }}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Thêm mới
-          </button>
-        </div>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Chi phí</h1>
+        <button onClick={handleCreateNew} className="btn-primary flex items-center">
+          <Plus className="w-4 h-4 mr-2" />
+          <div>Thêm chi phí mới</div>
+        </button>
       </div>
 
-      {/* Summary Totals */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Tổng số bản ghi
-              </p>
-              <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
-            </div>
-          </div>
-        </div>
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Tổng số tiền</p>
-              <p className="text-2xl font-bold text-success-600">
-                {formatCurrency(totals.amount.toString())}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Tổng chi phí</p>
-              <p className="text-2xl font-bold text-danger-600">
-                {formatCurrency(totals.total.toString())}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Trung bình/bản ghi
-              </p>
-              <p className="text-2xl font-bold text-primary-600">
-                {totals.count > 0
-                  ? formatCurrency((totals.total / totals.count).toString())
-                  : formatCurrency("0")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="card overflow-hidden p-0">
-        <div
-          ref={tableRef}
-          className={`overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 ${
-            isDragging ? "cursor-grabbing" : "cursor-grab"
-          } select-none`}
-          {...handlers}
-        >
-          <table className="w-full min-w-[1000px] text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-12">
-                  No.
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Thời gian
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Trung tâm
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Khoản chi
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Hạng mục
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Phụ trách
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Tình trạng
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Tổng
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Ghi chú
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  File đính kèm
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                  Hành động
-                </th>
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tháng/Năm
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Trung tâm
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Khoản chi
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Hạng mục
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tổng tiền
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Trạng thái
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Thao tác
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {records.map((record) => (
+              <tr key={record.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {record.month}/{record.year}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {record.center.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {record.category || "-"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {record.item?.name || "-"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {formatCurrency(record.total)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {record.status || "-"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => handleEdit(record)}
+                      className="text-primary-600 hover:text-primary-900"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(record.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td
-                    colSpan={11}
-                    className="px-3 py-2 text-center text-gray-500"
-                  >
-                    Đang tải...
-                  </td>
-                </tr>
-              ) : records.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={11}
-                    className="px-3 py-2 text-center text-gray-500"
-                  >
-                    Không có dữ liệu
-                  </td>
-                </tr>
-              ) : (
-                records.map((record, index) => (
-                  <tr key={record.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                      {((currentPage - 1) * itemsPerPage) + index + 1}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {getMonthName(record.month)} {record.year}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {record.center.name}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {record.category || "-"}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {record.item || "-"}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {record.responsible || "-"}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {record.status || "-"}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm font-semibold text-danger-600">
-                      {formatCurrency(record.total)}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-900 max-w-[150px] truncate" title={record.notes}>
-                      {record.notes || "-"}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      {record.uploadedFileUrl ? (
-                        <a
-                          href={record.uploadedFileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary-600 hover:text-primary-700 underline text-xs"
-                        >
-                          Xem file
-                        </a>
-                      ) : (
-                        <span className="text-gray-400 text-xs">-</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setEditingRecord(record);
-                            setModalOpen(true);
-                          }}
-                          className="text-primary-600 hover:text-primary-700 font-medium"
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          onClick={() => handleDelete(record.id)}
-                          className="text-danger-600 hover:text-danger-700 font-medium"
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-3 py-3 bg-white border-t border-gray-200">
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <span>
-                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                {Math.min(currentPage * itemsPerPage, totalCount)} của{" "}
-                {totalCount} kết quả
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => fetchRecords(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Trước
-              </button>
-
-              {/* Page numbers */}
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => fetchRecords(pageNum)}
-                    className={`px-3 py-1 text-sm border rounded-md ${
-                      currentPage === pageNum
-                        ? "bg-primary-600 text-white border-primary-600"
-                        : "border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-
-              <button
-                onClick={() => fetchRecords(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Sau
-              </button>
-            </div>
-          </div>
-        )}
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {modalOpen && (
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center space-x-2">
+          <button
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
+          >
+            Trước
+          </button>
+          <span className="px-3 py-1 text-sm">
+            Trang {currentPage} / {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage(Math.min(totalPages, currentPage + 1))
+            }
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
+          >
+            Sau
+          </button>
+        </div>
+      )}
+
+      {showModal && (
         <ExpenseModal
           record={editingRecord}
-          onClose={() => {
-            setModalOpen(false);
-            setEditingRecord(null);
-          }}
-          onSuccess={() => {
-            setModalOpen(false);
-            setEditingRecord(null);
-            fetchRecords(1); // Reset to page 1 after create/update
-          }}
+          onClose={handleModalClose}
+          onSuccess={handleModalSuccess}
         />
       )}
     </div>

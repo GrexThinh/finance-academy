@@ -10,9 +10,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "import-data": "tsx scripts/import-data.ts",
     "migrate-to-production": "tsx scripts/migrate-to-production.ts",
-    "migrate:programId-optional": "tsx scripts/migrate-programId-optional.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

@@ -48,7 +48,7 @@ export default function LoginPage() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Victoria Academy Finance
             </h1>
-            <p className="text-gray-600">Hệ thống quản lý tài chính</p>
+            <p className="text-gray-600">Ứng dụng quản lý tài chính</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">

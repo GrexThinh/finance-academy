@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin", "vietnamese"] });
 
 export const metadata: Metadata = {
   title: "Victoria Academy Finance - Quản Lý Tài Chính",
-  description: "Hệ thống quản lý tài chính cho các trung tâm đào tạo",
+  description: "Ứng dụng quản lý tài chính",
 };
 
 export default function RootLayout({

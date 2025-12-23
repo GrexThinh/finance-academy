@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
     const expenseRecords = await prisma.expenseRecord.findMany({
       include: {
         center: true,
+        item: true,
+        responsible: true,
       },
       orderBy: [{ year: "desc" }, { month: "desc" }],
       skip,
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
       year,
       centerId,
       category,
-      item,
+      itemId,
       position,
       contractType,
       hours,
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
       amount,
       kilometers,
       travelAllowance,
-      responsible,
+      responsibleId,
       status,
       total,
       notes,
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!item) {
+    if (!itemId) {
       return NextResponse.json({ error: "Item is required" }, { status: 400 });
     }
 
@@ -157,8 +159,8 @@ export async function POST(request: NextRequest) {
         month: parseInt(month),
         year: parseInt(year),
         centerId,
-        category,
-        item,
+        category: category || null,
+        itemId,
         position: position || null,
         contractType: contractType || null,
         hours: toDecimal(hours),
@@ -166,7 +168,7 @@ export async function POST(request: NextRequest) {
         amount: toDecimalRequired(amount),
         kilometers: toDecimal(kilometers),
         travelAllowance: toDecimal(travelAllowance),
-        responsible: responsible || null,
+        responsibleId: responsibleId || null,
         status: status || null,
         total: toDecimalRequired(total),
         notes: notes || null,
@@ -198,7 +200,7 @@ export async function PUT(request: NextRequest) {
       year,
       centerId,
       category,
-      item,
+      itemId,
       position,
       contractType,
       hours,
@@ -206,8 +208,8 @@ export async function PUT(request: NextRequest) {
       amount,
       kilometers,
       travelAllowance,
-      responsible,
-      status,
+      responsibleId,
+      statusId,
       total,
       notes,
       uploadedFileUrl,
@@ -221,6 +223,27 @@ export async function PUT(request: NextRequest) {
       if (!center) {
         return NextResponse.json(
           { error: "Center not found" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (itemId) {
+      const item = await prisma.expenseItem.findUnique({
+        where: { id: itemId },
+      });
+      if (!item) {
+        return NextResponse.json({ error: "Item not found" }, { status: 400 });
+      }
+    }
+
+    if (responsibleId) {
+      const responsible = await prisma.responsiblePerson.findUnique({
+        where: { id: responsibleId },
+      });
+      if (!responsible) {
+        return NextResponse.json(
+          { error: "Responsible person not found" },
           { status: 400 }
         );
       }
@@ -252,8 +275,8 @@ export async function PUT(request: NextRequest) {
         month: month !== undefined ? parseInt(month) : undefined,
         year: year !== undefined ? parseInt(year) : undefined,
         centerId,
-        category,
-        item,
+        category: category !== undefined ? category : undefined,
+        itemId: itemId !== undefined ? itemId : undefined,
         position: position || null,
         contractType: contractType || null,
         hours: toDecimal(hours),
@@ -261,8 +284,9 @@ export async function PUT(request: NextRequest) {
         amount: toDecimalRequired(amount),
         kilometers: toDecimal(kilometers),
         travelAllowance: toDecimal(travelAllowance),
-        responsible: responsible || null,
-        status: status || null,
+        responsibleId:
+          responsibleId !== undefined ? responsibleId || null : undefined,
+        status: status !== undefined ? status : undefined,
         total: toDecimalRequired(total),
         notes: notes || null,
         uploadedFileUrl: uploadedFileUrl || null,

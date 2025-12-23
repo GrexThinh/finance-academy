@@ -36,19 +36,53 @@ function downloadSvgChart(container: HTMLDivElement | null, filename: string) {
   const svg = container.querySelector("svg");
   if (!svg) return;
 
+  // Clone the SVG to avoid modifying the original
+  const svgClone = svg.cloneNode(true) as SVGElement;
+
+  // Get the bounding rectangle of the container to ensure we capture everything
+  const rect = container.getBoundingClientRect();
+  const containerWidth = rect.width || 800; // fallback width
+  const containerHeight = rect.height || 400; // fallback height
+
+  // Set explicit dimensions on the cloned SVG to capture full content
+  svgClone.setAttribute('width', containerWidth.toString());
+  svgClone.setAttribute('height', containerHeight.toString());
+  svgClone.style.width = containerWidth + 'px';
+  svgClone.style.height = containerHeight + 'px';
+
+  // Ensure the viewBox captures the full content
+  const viewBox = svgClone.getAttribute('viewBox');
+  if (!viewBox) {
+    // If no viewBox, create one based on container dimensions
+    svgClone.setAttribute('viewBox', `0 0 ${containerWidth} ${containerHeight}`);
+  }
+
   const serializer = new XMLSerializer();
-  const svgString = serializer.serializeToString(svg);
+  const svgString = serializer.serializeToString(svgClone);
   const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const image = new Image();
 
   image.onload = () => {
     const canvas = document.createElement("canvas");
-    canvas.width = image.width;
-    canvas.height = image.height;
+
+    // Use container dimensions with some padding to ensure full capture
+    const padding = 20; // Add padding for any overflow content
+    canvas.width = containerWidth + padding;
+    canvas.height = containerHeight + padding;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.drawImage(image, 0, 0);
+
+    // Fill with white background
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the image centered with padding
+    const x = padding / 2;
+    const y = padding / 2;
+    ctx.drawImage(image, x, y, containerWidth, containerHeight);
+
     URL.revokeObjectURL(url);
 
     const imgURI = canvas.toDataURL("image/png");
@@ -128,7 +162,7 @@ export default function StatisticsDashboardTab() {
   const programs = useMemo(
     () =>
       Array.from(
-        new Map(records.map((r) => [r.program.id, r.program.name])).entries()
+        new Map(records.filter((r) => r.program).map((r) => [r.program.id, r.program.name])).entries()
       ),
     [records]
   );
@@ -153,7 +187,7 @@ export default function StatisticsDashboardTab() {
 
   const revenueByProgram = useMemo(() => {
     const map = new Map<string, number>();
-    records.forEach((r) => {
+    records.filter((r) => r.program).forEach((r) => {
       const key = r.program.name;
       map.set(key, (map.get(key) || 0) + Number(r.revenue || 0));
     });

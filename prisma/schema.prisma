@@ -47,6 +47,7 @@ model Partner {
   @@map("partners")
 }
 
+
 model IncomeRecord {
   id                        String   @id @default(cuid())
   month                     Int
@@ -110,15 +111,39 @@ model IncomeRecord {
   @@map("income_records")
 }
 
-// Removed ExpenseCategory and ExpenseItem models - using free text instead
+
+model ExpenseItem {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenseRecords ExpenseRecord[]
+
+  @@map("expense_items")
+}
+
+model ResponsiblePerson {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenseRecords ExpenseRecord[]
+
+  @@map("responsible_persons")
+}
+
 
 model ExpenseRecord {
   id              String   @id @default(cuid())
   month           Int
   year            Int
   centerId        String
-  category        String
-  item            String
+  category        String?
+  itemId          String?
   position        String?
   contractType    String?
   hours           Decimal?  @db.Decimal(10, 2)
@@ -126,7 +151,7 @@ model ExpenseRecord {
   amount          Decimal   @db.Decimal(15, 2)
   kilometers      Decimal?  @db.Decimal(10, 2)
   travelAllowance Decimal?  @db.Decimal(15, 2)
-  responsible     String?
+  responsibleId   String?
   status          String?
   total           Decimal   @db.Decimal(15, 2)
   notes           String?
@@ -134,9 +159,14 @@ model ExpenseRecord {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  center     Center           @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  item       ExpenseItem?      @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  responsible ResponsiblePerson? @relation(fields: [responsibleId], references: [id], onDelete: SetNull)
 
   @@index([centerId])
+  @@index([itemId])
+  @@index([responsibleId])
   @@index([year, month])
   @@map("expense_records")
 }
+

@@ -15,13 +15,15 @@ export default function ExpenseModal({
   onSuccess,
 }: ExpenseModalProps) {
   const [centers, setCenters] = useState<any[]>([]);
+  const [items, setItems] = useState<any[]>([]);
+  const [responsiblePersons, setResponsiblePersons] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     month: record?.month || new Date().getMonth() + 1,
     year: record?.year || new Date().getFullYear(),
     centerId: record?.center?.id || "",
-    category: record?.category?.name || "",
-    item: record?.item?.name || "",
+    category: record?.category || "",
+    itemId: record?.item?.id || "",
     position: record?.position || "",
     contractType: record?.contractType || "",
     hours: record?.hours || "",
@@ -29,7 +31,7 @@ export default function ExpenseModal({
     amount: record?.amount || "",
     kilometers: record?.kilometers || "",
     travelAllowance: record?.travelAllowance || "",
-    responsible: record?.responsible || "",
+    responsibleId: record?.responsible?.id || "",
     status: record?.status || "",
     total: record?.total || "",
     notes: record?.notes || "",
@@ -38,18 +40,41 @@ export default function ExpenseModal({
 
   useEffect(() => {
     fetchCenters();
+    fetchItems();
+    fetchResponsiblePersons();
   }, []);
 
   const fetchCenters = async () => {
     const response = await fetch("/api/centers");
     const data = await response.json();
-    // API returns shape { data: Center[], pagination: ... }
     const centersArray = Array.isArray(data)
       ? data
       : Array.isArray(data?.data)
       ? data.data
       : [];
     setCenters(centersArray);
+  };
+
+  const fetchItems = async () => {
+    const response = await fetch("/api/expense-items?page=1&limit=1000");
+    const data = await response.json();
+    const itemsArray = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : [];
+    setItems(itemsArray);
+  };
+
+  const fetchResponsiblePersons = async () => {
+    const response = await fetch("/api/responsible-persons?page=1&limit=1000");
+    const data = await response.json();
+    const personsArray = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : [];
+    setResponsiblePersons(personsArray);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,7 +109,18 @@ export default function ExpenseModal({
     try {
       const url = "/api/expenses";
       const method = record ? "PUT" : "POST";
-      const body = record ? { id: record.id, ...formData } : formData;
+
+      // Prepare data with proper null handling for optional fields
+      const submitData = {
+        ...formData,
+        category: formData.category || null,
+        itemId: formData.itemId || null,
+        responsibleId: formData.responsibleId || null,
+        status: formData.status || null,
+        amount: formData.total || 0, // Set amount equal to total since amount field is not in UI
+      };
+
+      const body = record ? { id: record.id, ...submitData } : submitData;
 
       const response = await fetch(url, {
         method,
@@ -95,7 +131,8 @@ export default function ExpenseModal({
       if (response.ok) {
         onSuccess();
       } else {
-        alert("Có lỗi xảy ra");
+        const errorData = await response.json();
+        alert("Có lỗi xảy ra: " + (errorData.error || "Unknown error"));
       }
     } catch (error) {
       console.error("Error saving record:", error);
@@ -181,144 +218,61 @@ export default function ExpenseModal({
                 setFormData({ ...formData, category: e.target.value })
               }
               className="input"
-              placeholder="Nhập khoản chi"
+              placeholder="Nhập khoản chi..."
               required
             />
           </div>
 
           <div>
             <label className="label">Hạng mục</label>
-            <input
-              type="text"
-              value={formData.item}
+            <select
+              value={formData.itemId}
               onChange={(e) =>
-                setFormData({ ...formData, item: e.target.value })
-              }
-              className="input"
-              placeholder="Nhập hạng mục"
-              required
-            />
-          </div>
-
-          {/* <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Chức vụ</label>
-              <input
-                type="text"
-                value={formData.position}
-                onChange={(e) =>
-                  setFormData({ ...formData, position: e.target.value })
-                }
-                className="input"
-              />
-            </div>
-
-            <div>
-              <label className="label">Loại hợp đồng</label>
-              <input
-                type="text"
-                value={formData.contractType}
-                onChange={(e) =>
-                  setFormData({ ...formData, contractType: e.target.value })
-                }
-                className="input"
-              />
-            </div>
-          </div> */}
-
-          {/* <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Số giờ</label>
-              <input
-                type="number"
-                value={formData.hours}
-                onChange={(e) =>
-                  setFormData({ ...formData, hours: e.target.value })
-                }
-                className="input"
-                step="0.01"
-              />
-            </div>
-
-            <div>
-              <label className="label">Đơn giá (VNĐ)</label>
-              <input
-                type="number"
-                value={formData.unitPrice}
-                onChange={(e) =>
-                  setFormData({ ...formData, unitPrice: e.target.value })
-                }
-                className="input"
-                step="1000"
-              />
-            </div>
-          </div> */}
-
-          {/* <div>
-            <label className="label">Thành tiền (VNĐ)</label>
-            <input
-              type="number"
-              value={formData.amount}
-              onChange={(e) =>
-                setFormData({ ...formData, amount: e.target.value })
+                setFormData({ ...formData, itemId: e.target.value })
               }
               className="input"
               required
-              step="1000"
-            />
+            >
+              <option value="">Chọn hạng mục</option>
+              {items.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Số KM</label>
-              <input
-                type="number"
-                value={formData.kilometers}
-                onChange={(e) =>
-                  setFormData({ ...formData, kilometers: e.target.value })
-                }
-                className="input"
-                step="0.1"
-              />
-            </div>
-
-            <div>
-              <label className="label">PC di chuyển (VNĐ)</label>
-              <input
-                type="number"
-                value={formData.travelAllowance}
-                onChange={(e) =>
-                  setFormData({ ...formData, travelAllowance: e.target.value })
-                }
-                className="input"
-                step="1000"
-              />
-            </div>
-          </div> */}
 
           <div>
             <label className="label">Phụ trách</label>
-            <input
-              type="text"
-              value={formData.responsible}
+            <select
+              value={formData.responsibleId}
               onChange={(e) =>
-                setFormData({ ...formData, responsible: e.target.value })
+                setFormData({ ...formData, responsibleId: e.target.value })
               }
               className="input"
-            />
+            >
+              <option value="">Không chọn người phụ trách</option>
+              {responsiblePersons.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="label">Tình trạng</label>
-            <input
-              type="text"
+            <select
               value={formData.status}
               onChange={(e) =>
                 setFormData({ ...formData, status: e.target.value })
               }
               className="input"
-              placeholder="Ví dụ: Đã chi, Chưa chi"
-            />
+            >
+              <option value="">Chọn tình trạng</option>
+              <option value="Đã chi">Đã chi</option>
+              <option value="Chưa chi">Chưa chi</option>
+            </select>
           </div>
 
           <div>
@@ -331,7 +285,6 @@ export default function ExpenseModal({
               }
               className="input"
               required
-              step="1000"
             />
           </div>
 

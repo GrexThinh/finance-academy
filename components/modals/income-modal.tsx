@@ -309,7 +309,6 @@ export default function IncomeModal({
                 }
                 className="input"
                 min="0"
-                step="1000"
               />
             </div>
           </div>
@@ -329,7 +328,6 @@ export default function IncomeModal({
                 }
                 className="input"
                 min="0"
-                step="1000"
               />
             </div>
 
@@ -346,7 +344,6 @@ export default function IncomeModal({
                 }
                 className="input"
                 min="0"
-                step="1000"
               />
             </div>
           </div>
@@ -365,7 +362,6 @@ export default function IncomeModal({
                 }
                 className="input"
                 min="0"
-                step="1000"
               />
             </div>
             <div>
