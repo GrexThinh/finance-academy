@@ -22,6 +22,7 @@ export default function IncomeModal({
     month: record?.month || new Date().getMonth() + 1,
     year: record?.year || new Date().getFullYear(),
     centerId: record?.center?.id || "",
+    programId: record?.program?.id || "",
     partnerId: record?.partner?.id || "",
     numberOfClasses: record?.numberOfClasses || 0,
     numberOfStudents: record?.numberOfStudents || 0,
@@ -113,6 +114,7 @@ export default function IncomeModal({
       const submitData = {
         ...formData,
         // Convert empty strings to null for optional fields
+        programId: formData.programId || null,
         partnerId: formData.partnerId || null,
         totalTuitionFee: formData.totalTuitionFee
           ? parseFloat(formData.totalTuitionFee)
@@ -222,6 +224,27 @@ export default function IncomeModal({
             </div>
 
             <div>
+              <label className="label">CHƯƠNG TRÌNH</label>
+              <select
+                value={formData.programId}
+                onChange={(e) =>
+                  setFormData({ ...formData, programId: e.target.value })
+                }
+                className="input"
+              >
+                <option value="">Không chọn chương trình</option>
+                {programs &&
+                  programs?.map((program) => (
+                    <option key={program.id} value={program.id}>
+                      {program.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
               <label className="label">TÊN ĐỐI TÁC</label>
               <select
                 value={formData.partnerId}
@@ -239,10 +262,6 @@ export default function IncomeModal({
                   ))}
               </select>
             </div>
-          </div>
-
-          {/* Class and Student Information */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">SỐ LỚP</label>
               <input
@@ -258,7 +277,10 @@ export default function IncomeModal({
                 min="0"
               />
             </div>
+          </div>
 
+          {/* Class and Student Information */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">SỐ HỌC SINH (100% hp)</label>
               <input
@@ -274,10 +296,6 @@ export default function IncomeModal({
                 min="0"
               />
             </div>
-          </div>
-
-          {/* Financial Information */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Tổng học phí</label>
               <input
@@ -294,7 +312,10 @@ export default function IncomeModal({
                 step="1000"
               />
             </div>
+          </div>
 
+          {/* Financial Information */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Trích BGH</label>
               <input
@@ -328,7 +349,9 @@ export default function IncomeModal({
                 step="1000"
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Thực thu tại VIC</label>
               <input
@@ -343,6 +366,16 @@ export default function IncomeModal({
                 className="input"
                 min="0"
                 step="1000"
+              />
+            </div>
+            <div>
+              <label className="label">Ghi chú</label>
+              <input
+                value={formData.notes}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+                className="input"
               />
             </div>
           </div>
@@ -360,18 +393,6 @@ export default function IncomeModal({
               placeholder="Ví dụ: Đã thu, Chưa thu"
             />
           </div> */}
-
-          <div>
-            <label className="label">Ghi chú</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-              className="input"
-              rows={3}
-            />
-          </div>
 
           {/* File Upload */}
           <div>

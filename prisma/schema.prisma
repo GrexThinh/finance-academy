@@ -52,11 +52,11 @@ model IncomeRecord {
   month                     Int
   year                      Int
   centerId                  String
-  programId                 String
+  programId                 String?
   partnerId                 String?
   numberOfClasses           Int      @default(0)
   numberOfStudents          Int      @default(0)
-  revenue                   Decimal  @db.Decimal(15, 2)
+  revenue                   Decimal? @db.Decimal(15, 2)
   status                    String?
   notes                     String?
   uploadedFileUrl           String?
@@ -100,7 +100,7 @@ model IncomeRecord {
   updatedAt                 DateTime @updatedAt
 
   center   Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  program  Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  program  Program? @relation(fields: [programId], references: [id], onDelete: SetNull)
   partner  Partner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
 
   @@index([centerId])

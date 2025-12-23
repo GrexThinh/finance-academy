@@ -13,6 +13,7 @@ interface IncomeRecord {
   month: number;
   year: number;
   center: { id: string; name: string };
+  program?: { id: string; name: string } | null;
   partner?: { id: string; name: string } | null;
   numberOfClasses: number;
   numberOfStudents: number;
@@ -124,7 +125,8 @@ export default function IncomePage() {
       // If we're on a page that will be empty after deletion, go to previous page
       const newTotalCount = totalCount - 1;
       const newTotalPages = Math.ceil(newTotalCount / itemsPerPage);
-      const pageToFetch = currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage;
+      const pageToFetch =
+        currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage;
       fetchRecords(pageToFetch);
     } catch (error) {
       console.error("Error deleting record:", error);
@@ -209,7 +211,7 @@ export default function IncomePage() {
           } select-none`}
           {...handlers}
         >
-          <table className="w-full min-w-[1300px]">
+          <table className="w-full min-w-[1420px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
@@ -223,6 +225,9 @@ export default function IncomePage() {
                 </th>
                 <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
                   TRUNG TÂM
+                </th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                  CHƯƠNG TRÌNH
                 </th>
                 <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
                   TÊN ĐỐI TÁC
@@ -263,7 +268,7 @@ export default function IncomePage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={15}
+                    colSpan={16}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     Đang tải...
@@ -272,7 +277,7 @@ export default function IncomePage() {
               ) : records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={15}
+                    colSpan={16}
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     Không có dữ liệu
@@ -282,7 +287,7 @@ export default function IncomePage() {
                 records.map((record, index) => (
                   <tr key={record.id} className="hover:bg-gray-50">
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {((currentPage - 1) * itemsPerPage) + index + 1}
+                      {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.year}
@@ -294,6 +299,9 @@ export default function IncomePage() {
                       {record.center?.name || "N/A"}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {record.program?.name || "-"}
+                    </td>
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.partner?.name || "-"}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -303,22 +311,33 @@ export default function IncomePage() {
                       {record.numberOfStudents}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.totalTuitionFee ? formatCurrency(record.totalTuitionFee) : '-'}
+                      {record.totalTuitionFee
+                        ? formatCurrency(record.totalTuitionFee)
+                        : "-"}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.agentCommission ? formatCurrency(record.agentCommission) : '-'}
+                      {record.agentCommission
+                        ? formatCurrency(record.agentCommission)
+                        : "-"}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.totalDeduction ? formatCurrency(record.totalDeduction) : '-'}
+                      {record.totalDeduction
+                        ? formatCurrency(record.totalDeduction)
+                        : "-"}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm font-semibold text-success-600">
-                      {record.actualReceivable ? formatCurrency(record.actualReceivable) : '-'}
+                      {record.actualReceivable
+                        ? formatCurrency(record.actualReceivable)
+                        : "-"}
                     </td>
                     {/* <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.status || '-'}
                     </td> */}
-                    <td className="px-2 py-4 text-sm text-gray-900 max-w-[150px] truncate" title={record.notes}>
-                      {record.notes || '-'}
+                    <td
+                      className="px-2 py-4 text-sm text-gray-900 max-w-[150px] truncate"
+                      title={record.notes}
+                    >
+                      {record.notes || "-"}
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.uploadedFileUrl ? (
@@ -366,7 +385,8 @@ export default function IncomePage() {
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <span>
                 Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                {Math.min(currentPage * itemsPerPage, totalCount)} của {totalCount} kết quả
+                {Math.min(currentPage * itemsPerPage, totalCount)} của{" "}
+                {totalCount} kết quả
               </span>
             </div>
 
@@ -437,4 +457,3 @@ export default function IncomePage() {
     </div>
   );
 }
-

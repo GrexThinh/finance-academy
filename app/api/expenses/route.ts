@@ -1,36 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await auth();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const searchParams = request.nextUrl.searchParams
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
 
     // Get total count for pagination
-    const totalCount = await prisma.expenseRecord.count()
+    const totalCount = await prisma.expenseRecord.count();
 
     // Calculate pagination values
-    const totalPages = Math.ceil(totalCount / limit)
-    const skip = (page - 1) * limit
+    const totalPages = Math.ceil(totalCount / limit);
+    const skip = (page - 1) * limit;
 
     const expenseRecords = await prisma.expenseRecord.findMany({
       include: {
         center: true,
       },
-      orderBy: [
-        { year: 'desc' },
-        { month: 'desc' },
-      ],
+      orderBy: [{ year: "desc" }, { month: "desc" }],
       skip,
       take: limit,
-    })
+    });
 
     return NextResponse.json({
       data: expenseRecords,
@@ -42,24 +39,24 @@ export async function GET(request: NextRequest) {
         hasNext: page < totalPages,
         hasPrev: page > 1,
       },
-    })
+    });
   } catch (error) {
-    console.error('Error fetching expense records:', error)
+    console.error("Error fetching expense records:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch expense records' },
+      { error: "Failed to fetch expense records" },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await auth();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
+    const body = await request.json();
     const {
       month,
       year,
@@ -78,95 +75,234 @@ export async function POST(request: NextRequest) {
       total,
       notes,
       uploadedFileUrl,
-    } = body
+    } = body;
+
+    // Validate required fields
+    if (!month || isNaN(parseInt(month))) {
+      return NextResponse.json(
+        { error: "Valid month is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!year || isNaN(parseInt(year))) {
+      return NextResponse.json(
+        { error: "Valid year is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!centerId) {
+      return NextResponse.json(
+        { error: "Center ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!category) {
+      return NextResponse.json(
+        { error: "Category is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!item) {
+      return NextResponse.json({ error: "Item is required" }, { status: 400 });
+    }
+
+    if (!amount || amount === "undefined" || isNaN(parseFloat(amount))) {
+      return NextResponse.json(
+        { error: "Valid amount is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!total || total === "undefined" || isNaN(parseFloat(total))) {
+      return NextResponse.json(
+        { error: "Valid total is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate required foreign keys exist
+    const center = await prisma.center.findUnique({
+      where: { id: centerId },
+    });
+    if (!center) {
+      return NextResponse.json({ error: "Center not found" }, { status: 400 });
+    }
+
+    // Helper function to convert string to decimal or null
+    const toDecimal = (value: any): any => {
+      if (value === "" || value === null || value === undefined) return null;
+      const num = parseFloat(value);
+      return isNaN(num) ? null : num;
+    };
+
+    // Helper function for required decimal fields
+    const toDecimalRequired = (value: any): number => {
+      if (
+        value === "" ||
+        value === null ||
+        value === undefined ||
+        value === "undefined"
+      )
+        return 0;
+      const num = parseFloat(value);
+      return isNaN(num) ? 0 : num;
+    };
 
     const expenseRecord = await prisma.expenseRecord.create({
       data: {
-        month,
-        year,
+        month: parseInt(month),
+        year: parseInt(year),
         centerId,
         category,
         item,
-        position,
-        contractType,
-        hours,
-        unitPrice,
-        amount,
-        kilometers,
-        travelAllowance,
-        responsible,
-        status,
-        total,
-        notes,
-        uploadedFileUrl,
+        position: position || null,
+        contractType: contractType || null,
+        hours: toDecimal(hours),
+        unitPrice: toDecimal(unitPrice),
+        amount: toDecimalRequired(amount),
+        kilometers: toDecimal(kilometers),
+        travelAllowance: toDecimal(travelAllowance),
+        responsible: responsible || null,
+        status: status || null,
+        total: toDecimalRequired(total),
+        notes: notes || null,
+        uploadedFileUrl: uploadedFileUrl || null,
       },
-      include: {
-        center: true,
-      },
-    })
+    });
 
-    return NextResponse.json(expenseRecord, { status: 201 })
+    return NextResponse.json(expenseRecord, { status: 201 });
   } catch (error) {
-    console.error('Error creating expense record:', error)
+    console.error("Error creating expense record:", error);
     return NextResponse.json(
-      { error: 'Failed to create expense record' },
+      { error: "Failed to create expense record" },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await auth();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { id, ...data } = body
+    const body = await request.json();
+    const {
+      id,
+      month,
+      year,
+      centerId,
+      category,
+      item,
+      position,
+      contractType,
+      hours,
+      unitPrice,
+      amount,
+      kilometers,
+      travelAllowance,
+      responsible,
+      status,
+      total,
+      notes,
+      uploadedFileUrl,
+    } = body;
+
+    // Validate required foreign keys exist
+    if (centerId) {
+      const center = await prisma.center.findUnique({
+        where: { id: centerId },
+      });
+      if (!center) {
+        return NextResponse.json(
+          { error: "Center not found" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Helper function to convert string to decimal or null
+    const toDecimal = (value: any): any => {
+      if (value === "" || value === null || value === undefined) return null;
+      const num = parseFloat(value);
+      return isNaN(num) ? null : num;
+    };
+
+    // Helper function for required decimal fields
+    const toDecimalRequired = (value: any): number => {
+      if (
+        value === "" ||
+        value === null ||
+        value === undefined ||
+        value === "undefined"
+      )
+        return 0;
+      const num = parseFloat(value);
+      return isNaN(num) ? 0 : num;
+    };
 
     const expenseRecord = await prisma.expenseRecord.update({
       where: { id },
-      data,
-      include: {
-        center: true,
+      data: {
+        month: month !== undefined ? parseInt(month) : undefined,
+        year: year !== undefined ? parseInt(year) : undefined,
+        centerId,
+        category,
+        item,
+        position: position || null,
+        contractType: contractType || null,
+        hours: toDecimal(hours),
+        unitPrice: toDecimal(unitPrice),
+        amount: toDecimalRequired(amount),
+        kilometers: toDecimal(kilometers),
+        travelAllowance: toDecimal(travelAllowance),
+        responsible: responsible || null,
+        status: status || null,
+        total: toDecimalRequired(total),
+        notes: notes || null,
+        uploadedFileUrl: uploadedFileUrl || null,
       },
-    })
+    });
 
-    return NextResponse.json(expenseRecord)
+    return NextResponse.json(expenseRecord);
   } catch (error) {
-    console.error('Error updating expense record:', error)
+    console.error("Error updating expense record:", error);
     return NextResponse.json(
-      { error: 'Failed to update expense record' },
+      { error: "Failed to update expense record" },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await auth();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const searchParams = request.nextUrl.searchParams
-    const id = searchParams.get('id')
+    const searchParams = request.nextUrl.searchParams;
+    const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: 'ID is required' }, { status: 400 })
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
     await prisma.expenseRecord.delete({
       where: { id },
-    })
+    });
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting expense record:', error)
+    console.error("Error deleting expense record:", error);
     return NextResponse.json(
-      { error: 'Failed to delete expense record' },
+      { error: "Failed to delete expense record" },
       { status: 500 }
-    )
+    );
   }
 }
