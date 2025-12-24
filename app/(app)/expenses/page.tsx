@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -25,7 +24,9 @@ export default function ExpensesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<ExpenseRecord | null>(null);
+  const [editingRecord, setEditingRecord] = useState<ExpenseRecord | null>(
+    null
+  );
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -44,7 +45,11 @@ export default function ExpensesPage() {
 
       const response = await fetch(`/api/expenses?${params}`);
       const data = await response.json();
-      const recordsArray = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      const recordsArray = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
       setRecords(recordsArray);
       setTotalPages(data?.pagination?.totalPages || 1);
     } catch (error) {
@@ -55,7 +60,8 @@ export default function ExpensesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this expense record?")) return;
+    if (!confirm("Are you sure you want to delete this expense record?"))
+      return;
 
     try {
       const response = await fetch(`/api/expenses?id=${id}`, {
@@ -102,7 +108,13 @@ export default function ExpensesPage() {
   };
 
   // Get unique statuses from records
-  const statuses = Array.from(new Set(records.map((r) => r.status).filter(Boolean))).sort();
+  const statuses = Array.from(
+    new Set(
+      records
+        .map((r) => r.status)
+        .filter((status): status is string => Boolean(status))
+    )
+  ).sort();
 
   if (loading) {
     return (
@@ -116,7 +128,10 @@ export default function ExpensesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Chi phí</h1>
-        <button onClick={handleCreateNew} className="btn-primary flex items-center">
+        <button
+          onClick={handleCreateNew}
+          className="btn-primary flex items-center"
+        >
           <Plus className="w-4 h-4 mr-2" />
           <div>Thêm chi phí mới</div>
         </button>
