@@ -35,6 +35,7 @@ export default function IncomePage() {
   const [editingRecord, setEditingRecord] = useState<IncomeRecord | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,9 +61,9 @@ export default function IncomePage() {
 
   useEffect(() => {
     if (status === "authenticated" && session) {
-      fetchRecords(1); // Reset to page 1 when year filter changes
+      fetchRecords(1); // Reset to page 1 when year, status, or search filter changes
     }
-  }, [selectedYear]);
+  }, [selectedYear, selectedStatus, searchTerm]);
 
   const fetchRecords = async (page = currentPage) => {
     try {
@@ -73,6 +74,8 @@ export default function IncomePage() {
       });
 
       if (selectedYear) params.append("year", selectedYear);
+      if (selectedStatus) params.append("status", selectedStatus);
+      if (searchTerm) params.append("search", searchTerm);
 
       const response = await fetch(`/api/income?${params}`);
       if (response.ok) {
@@ -101,6 +104,8 @@ export default function IncomePage() {
     try {
       const params = new URLSearchParams({ type: "income" });
       if (selectedYear) params.append("year", selectedYear);
+      if (selectedStatus) params.append("status", selectedStatus);
+      if (searchTerm) params.append("search", searchTerm);
 
       const response = await fetch(`/api/export?${params}`);
       const blob = await response.blob();
@@ -138,6 +143,10 @@ export default function IncomePage() {
   const years = Array.from(new Set(records.map((r) => r.year))).sort(
     (a, b) => b - a
   );
+
+  const statuses = Array.from(
+    new Set(records.map((r) => r.status).filter(Boolean))
+  ).sort();
 
   return (
     <div className="space-y-6">
@@ -199,6 +208,20 @@ export default function IncomePage() {
               ))}
             </select>
           </div>
+          <div className="w-full sm:w-48">
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="input"
+            >
+              <option value="">Tất cả trạng thái</option>
+              {statuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -250,9 +273,9 @@ export default function IncomePage() {
                 <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
                   Thực thu tại VIC
                 </th>
-                {/* <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
                   Tình trạng
-                </th> */}
+                </th>
                 <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
                   Ghi chú
                 </th>
@@ -330,9 +353,9 @@ export default function IncomePage() {
                         ? formatCurrency(record.actualReceivable)
                         : "-"}
                     </td>
-                    {/* <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {record.status || '-'}
-                    </td> */}
+                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {record.status || "-"}
+                    </td>
                     <td
                       className="px-2 py-4 text-sm text-gray-900 max-w-[150px] truncate"
                       title={record.notes}

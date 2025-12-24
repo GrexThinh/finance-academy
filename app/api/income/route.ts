@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     const programId = searchParams.get("programId");
     const year = searchParams.get("year");
     const month = searchParams.get("month");
+    const status = searchParams.get("status");
+    const search = searchParams.get("search");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
 
@@ -22,6 +24,16 @@ export async function GET(request: NextRequest) {
     if (programId) where.programId = programId;
     if (year) where.year = parseInt(year);
     if (month) where.month = parseInt(month);
+    if (status) where.status = status;
+
+    // Add search functionality
+    if (search) {
+      where.OR = [
+        { center: { name: { contains: search, mode: "insensitive" } } },
+        { program: { name: { contains: search, mode: "insensitive" } } },
+        { partner: { name: { contains: search, mode: "insensitive" } } },
+      ];
+    }
 
     // Get total count for pagination
     const totalCount = await prisma.incomeRecord.count({ where });

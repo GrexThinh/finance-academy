@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Search } from "lucide-react";
 import ExpenseModal from "@/components/modals/expense-modal";
 
 interface ExpenseRecord {
@@ -26,14 +26,23 @@ export default function ExpensesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ExpenseRecord | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchRecords();
-  }, [currentPage]);
+  }, [currentPage, selectedStatus, searchTerm]);
 
   const fetchRecords = async () => {
     try {
-      const response = await fetch(`/api/expenses?page=${currentPage}&limit=10`);
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: "10",
+      });
+      if (selectedStatus) params.append("status", selectedStatus);
+      if (searchTerm) params.append("search", searchTerm);
+
+      const response = await fetch(`/api/expenses?${params}`);
       const data = await response.json();
       const recordsArray = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
       setRecords(recordsArray);
@@ -92,6 +101,9 @@ export default function ExpensesPage() {
     }).format(amount);
   };
 
+  // Get unique statuses from records
+  const statuses = Array.from(new Set(records.map((r) => r.status).filter(Boolean))).sort();
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -108,6 +120,44 @@ export default function ExpensesPage() {
           <Plus className="w-4 h-4 mr-2" />
           <div>Thêm chi phí mới</div>
         </button>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white shadow-sm rounded-lg p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tìm kiếm
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo trung tâm, hạng mục hoặc người phụ trách..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+          </div>
+          <div className="w-full sm:w-48">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Trạng thái
+            </label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="">Tất cả trạng thái</option>
+              {statuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">

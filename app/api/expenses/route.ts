@@ -12,15 +12,31 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
+    const status = searchParams.get("status");
+    const search = searchParams.get("search");
+
+    const where: any = {};
+    if (status) where.status = status;
+
+    // Add search functionality
+    if (search) {
+      where.OR = [
+        { center: { name: { contains: search, mode: "insensitive" } } },
+        { category: { contains: search, mode: "insensitive" } },
+        { item: { name: { contains: search, mode: "insensitive" } } },
+        { responsible: { name: { contains: search, mode: "insensitive" } } },
+      ];
+    }
 
     // Get total count for pagination
-    const totalCount = await prisma.expenseRecord.count();
+    const totalCount = await prisma.expenseRecord.count({ where });
 
     // Calculate pagination values
     const totalPages = Math.ceil(totalCount / limit);
     const skip = (page - 1) * limit;
 
     const expenseRecords = await prisma.expenseRecord.findMany({
+      where,
       include: {
         center: true,
         item: true,
