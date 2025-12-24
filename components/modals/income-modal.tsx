@@ -365,8 +365,26 @@ export default function IncomeModal({
               />
             </div>
             <div>
+              <label className="label">Tình trạng</label>
+              <select
+                value={formData.status}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value })
+                }
+                className="input"
+              >
+                <option value="">Chọn tình trạng</option>
+                <option value="Đã thu">Đã thu</option>
+                <option value="Chưa thu">Chưa thu</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            <div>
               <label className="label">Ghi chú</label>
-              <input
+              <textarea
+                rows={3}
                 value={formData.notes}
                 onChange={(e) =>
                   setFormData({ ...formData, notes: e.target.value })
@@ -375,20 +393,6 @@ export default function IncomeModal({
               />
             </div>
           </div>
-
-          {/* Status and Notes */}
-          {/* <div>
-            <label className="label">Tình trạng</label>
-            <input
-              type="text"
-              value={formData.status}
-              onChange={(e) =>
-                setFormData({ ...formData, status: e.target.value })
-              }
-              className="input"
-              placeholder="Ví dụ: Đã thu, Chưa thu"
-            />
-          </div> */}
 
           {/* File Upload */}
           <div>
